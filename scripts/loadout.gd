@@ -2,7 +2,7 @@ extends RefCounted
 
 const SAVE_PATH := "user://equipment.json"
 const DEFAULT_SLOTS := ["missile", "", "", ""]
-const VALID_IDS := ["", "missile", "point_defense", "carrier"]
+const VALID_IDS := ["", "missile", "point_defense", "carrier", "satellite_deployer"]
 
 static func get_slots() -> Array:
 	var file := FileAccess.open(SAVE_PATH, FileAccess.READ)

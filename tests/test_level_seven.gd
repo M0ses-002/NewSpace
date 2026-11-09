@@ -23,11 +23,11 @@ func new_level() -> Node:
 	return level
 
 func run() -> void:
-	check(Progress.LAST_LEVEL == 7, "第七关是最后一关")
+	check(Progress.LAST_LEVEL == 8, "第八关是最后一关")
 	check(Progress.reset_level() and Progress.save_level(6), "保存第六关进度")
 	var selection = load("res://scenes/level_select.tscn").instantiate()
 	root.add_child(selection)
-	check(selection.levels.get_child_count() == 7 and selection.levels.get_child(6).disabled, "第七关未解锁时不可选")
+	check(selection.levels.get_child_count() == 8 and selection.levels.get_child(6).disabled, "第七关未解锁时不可选")
 	selection.queue_free()
 	await process_frame
 	for first in range(2):
@@ -43,8 +43,8 @@ func run() -> void:
 		check(not level.completed and battle.enemies.size() == 1, "击毁一艘敌舰不通关")
 		battle.damage_target(enemy2, 10000.0)
 		await process_frame
-		check(level.completed and level.victory_controls.visible and not level.victory_next.visible and not paused, "两艘敌舰被击毁后通关且不暂停")
-		check(Progress.load_level() == 7, "第七关通关保存进度")
+		check(level.completed and level.victory_controls.visible and level.victory_next.visible and not paused, "两艘敌舰被击毁后通关且不暂停")
+		check(Progress.load_level() == 8, "第七关通关解锁第八关")
 		level.queue_free()
 		await process_frame
 	var crash = new_level()

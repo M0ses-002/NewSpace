@@ -54,6 +54,14 @@ text = "设置"
 layout_mode = 2
 text = "退出"
 
+[node name="Difficulty" type="CheckButton" parent="."]
+offset_left = 24.0
+offset_top = 24.0
+offset_right = 250.0
+offset_bottom = 68.0
+theme_override_font_sizes/font_size = 20
+text = "困难模式：关闭"
+
 [node name="Confirm" type="ConfirmationDialog" parent="."]
 title = "开始新游戏"
 dialog_text = "新游戏将覆盖已有的关卡进度，是否继续？"

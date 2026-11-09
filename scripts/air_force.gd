@@ -59,17 +59,6 @@ func initialize() -> void:
 		push_error("空军拖尾点数必须为不小于 2 的整数")
 		visible = false
 		return
-	if not _snap_endpoints():
-		push_error("空军航线无效：行星缺失或端点位于行星中心")
-		visible = false
-		return
-	var s := start_marker.position
-	var a := apex_marker.position
-	var e := end_marker.position
-	if not s.is_finite() or not a.is_finite() or not e.is_finite() or (a.x - s.x) * (e.x - a.x) <= 0.0 or a.y >= minf(s.y, e.y):
-		push_error("空军航线无效：最高点必须位于两端横坐标之间且高于两端")
-		visible = false
-		return
 	config = data
 	valid = true
 	visible = true
@@ -157,14 +146,12 @@ func point_at(progress: float) -> Vector2:
 	var s := start_marker.position
 	var a := apex_marker.position
 	var e := end_marker.position
-	# 两段顶点式二次曲线拼接，顶点切线连续；并非单条抛物线。
-	var x := lerpf(s.x, e.x, clampf(progress, 0.0, 1.0))
-	var endpoint := s if (x - a.x) * (s.x - a.x) >= 0.0 else e
-	var ratio := (x - a.x) / (endpoint.x - a.x)
-	return Vector2(x, a.y + (endpoint.y - a.y) * ratio * ratio)
+	var p := clampf(progress, 0.0, 1.0)
+	var control := 2.0 * a - 0.5 * (s + e)
+	return (1.0 - p) * (1.0 - p) * s + 2.0 * (1.0 - p) * p * control + p * p * e
 
 func apex_progress() -> float:
-	return (apex_marker.position.x - start_marker.position.x) / (end_marker.position.x - start_marker.position.x)
+	return 0.5
 
 func sample_path(segments: int) -> PackedVector2Array:
 	var points := PackedVector2Array()
@@ -184,11 +171,15 @@ func member_point_at(progress: float, offset: Vector2) -> Vector2:
 	var s := start_marker.position
 	var a := apex_marker.position
 	var e := end_marker.position
-	var x := lerpf(s.x, e.x, p)
-	var endpoint := s if (x - a.x) * (s.x - a.x) >= 0.0 else e
-	var slope := 2.0 * (endpoint.y - a.y) * (x - a.x) / pow(endpoint.x - a.x, 2.0)
-	var direction := signf(e.x - s.x)
-	var tangent := Vector2(direction, direction * slope).normalized()
+	var control := 2.0 * a - 0.5 * (s + e)
+	var tangent := 2.0 * ((1.0 - p) * (control - s) + p * (e - control))
+	if tangent.length_squared() < 0.000000001:
+		tangent = e - s
+	if tangent.length_squared() < 0.000000001:
+		tangent = a - s
+	if tangent.length_squared() < 0.000000001:
+		tangent = Vector2.RIGHT
+	tangent = tangent.normalized()
 	return center + (tangent * offset.x + tangent.orthogonal() * offset.y) * sin(PI * p)
 
 func member_direction_at(progress: float, offset: Vector2) -> Vector2:

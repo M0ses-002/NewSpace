@@ -36,21 +36,14 @@ func run() -> void:
 	force.reset_force()
 	var planet: Node2D = level.get_node("Sandbox/World/Planet")
 	var radius: float = float(level.get_node("Sandbox").Config.planet.radius_km)
-	var expected_start: Vector2 = force.to_local(planet.to_global(planet.to_local(force.to_global(saved_start)).normalized() * radius))
-	var expected_end: Vector2 = force.to_local(planet.to_global(planet.to_local(force.to_global(saved_end)).normalized() * radius))
-	check(force.start_marker.position.distance_to(expected_start) < 0.001 and force.end_marker.position.distance_to(expected_end) < 0.001, "场景端点沿原方向吸附到绑定行星表面")
-	var start_world: Vector2 = force.to_global(force.start_marker.position)
-	var end_world: Vector2 = force.to_global(force.end_marker.position)
-	check(absf(start_world.distance_to(planet.global_position) - radius) < 0.001, "第六关起点位于行星表面")
-	check(absf(end_world.distance_to(planet.global_position) - radius) < 0.001, "第六关终点位于行星表面")
+	check(force.start_marker.position.is_equal_approx(saved_start) and force.end_marker.position.is_equal_approx(saved_end), "保留场景中编辑的起点和终点")
 	var member_paths_valid := true
 	for member in force.members:
 		for i in range(1001):
 			var p := float(i) / 1000.0
-			var distance: float = planet.to_local(force.to_global(force.member_point_at(p, member.offset))).length()
-			if (i == 0 or i == 1000) and absf(distance - radius) > 0.001:
+			if (i == 0 and not force.member_point_at(p, member.offset).is_equal_approx(saved_start)) or (i == 1000 and not force.member_point_at(p, member.offset).is_equal_approx(saved_end)):
 				member_paths_valid = false
-	check(member_paths_valid, "全部九名成员的起终点在表面")
+	check(member_paths_valid, "全部九名成员的起终点与编辑点一致")
 	var midpoint_spacing: float = force.member_point_at(0.5, force.members[1].offset).distance_to(force.member_point_at(0.5, force.members[2].offset))
 	check(midpoint_spacing > 0.1, "人字编队中点保持非零间距")
 	var oriented := true
@@ -157,9 +150,7 @@ func run() -> void:
 	var reverse_spacing: float = force.member_point_at(0.5, force.members[1].offset).distance_to(force.member_point_at(0.5, force.members[2].offset))
 	check(reverse_spacing > 10.0, "反向航线人字编队中段充分散开")
 	print("AIR_REVERSE_MIN_FORWARD ", reverse_minimum)
-	var apex: float = force.apex_progress()
-	var peak: Vector2 = force.point_at(apex)
-	check(force.point_at(apex - 0.001).y > peak.y and force.point_at(apex + 0.001).y > peak.y, "顶点为真实最高点")
+	check(force.point_at(0.5).is_equal_approx(force.apex_marker.position), "航线中点经过编辑的中间点")
 	check(force.members[1].offset.x < 0.0, "反向航线人字形偏移相对切线向后")
 	force.triggered = true
 	force.advance(float(force.config.duration_sim_s) * 0.75)
@@ -174,21 +165,26 @@ func run() -> void:
 	force.end_marker.position = Vector2(40, -30)
 	force.initialize()
 	check(force.valid and planet.to_local(force.to_global(force.point_at(0.5))).length() < radius, "独立夹具允许航线穿越行星")
-	force.apex_marker.position = Vector2(0, -90)
-	force.start_marker.position = Vector2(-39, -30)
-	force.initialize()
-	check(force.valid and absf(planet.to_local(force.start_marker.global_position).length() - radius) < 0.001, "偏离表面的端点运行时吸附")
-	force.start_marker.position = force.to_local(planet.global_position)
-	force.initialize()
-	check(not force.valid and not force.visible, "行星中心端点禁用")
-	force.start_marker.position = Vector2(-40, -30)
 	force.planet_path = NodePath("../../MissingPlanet")
-	force.initialize()
-	check(not force.valid, "未绑定行星时禁用")
-	force.planet_path = NodePath("../../Planet")
-	force.end_marker.position.x = -20
-	force.initialize()
-	check(not force.valid and not force.visible, "不合法航线禁用")
+	for fixture in [
+		[Vector2(3, 4), Vector2(3, -20), Vector2(3, 30)],
+		[Vector2(0, 0), Vector2(40, 50), Vector2(-20, -10)],
+		[Vector2(0, 0), Vector2(0, 0), Vector2(40, 0)],
+		[Vector2(0, 0), Vector2(30, 0), Vector2(0, 0)],
+		[Vector2(4, 7), Vector2(4, 7), Vector2(4, 7)]]:
+		force.start_marker.position = fixture[0]
+		force.apex_marker.position = fixture[1]
+		force.end_marker.position = fixture[2]
+		force.initialize()
+		var finite := true
+		for i in range(101):
+			for member in force.members:
+				if not force.member_point_at(float(i) / 100.0, member.offset).is_finite():
+					finite = false
+		check(force.valid and finite and force.point_at(0.0).is_equal_approx(fixture[0]) and force.point_at(0.5).is_equal_approx(fixture[1]) and force.point_at(1.0).is_equal_approx(fixture[2]), "任意三点与退化夹具均可运行且精确经过各点")
+		force.triggered = true
+		force.advance(0.125)
+		check(force.elapsed > 0.0 and force.members[0].current.is_finite(), "退化航线仍可出动")
 	level.queue_free()
 	await process_frame
 	print("AIR_FORCE_TEST checks=", checks, " failures=", failures)

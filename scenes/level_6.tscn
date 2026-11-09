@@ -21,13 +21,13 @@ config_path = "res://data/enemy_default.json"
 planet_path = NodePath("../../Planet")
 
 [node name="Start" parent="Sandbox/World/AirForces/AirForce1" index="0" unique_id=907933116]
-position = Vector2(46, -22)
+position = Vector2(-40, 33)
 
 [node name="Apex" parent="Sandbox/World/AirForces/AirForce1" index="1" unique_id=455416263]
-position = Vector2(4, -256)
+position = Vector2(3, 161)
 
 [node name="End" parent="Sandbox/World/AirForces/AirForce1" index="2" unique_id=2007174267]
-position = Vector2(-48, -19)
+position = Vector2(37, 34)
 
 [editable path="Sandbox"]
 [editable path="Sandbox/World/AirForces/AirForce1"]

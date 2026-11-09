@@ -1,6 +1,8 @@
 extends Node
 
 const Progress = preload("res://scripts/level_progress.gd")
+const HardMode = preload("res://scripts/hard_mode.gd")
+const Loadout = preload("res://scripts/loadout.gd")
 @export_file("*.json") var config_path: String
 var config: Dictionary
 var sandbox: Node2D
@@ -8,6 +10,12 @@ var combat: Node2D
 var visited: Array[bool] = []
 var page := 0
 var completed := false
+var hard_enabled := false
+var hard_rule: Dictionary = {}
+var hard_started := false
+var hard_elapsed_usec: int = 0
+var hard_clock_usec: int = 0
+var hard_clock_running := false
 var satellite_count := 0
 var enemy_lost_in_all_enemies := false
 var all_enemy_targets: Array[Node2D] = []
@@ -34,6 +42,9 @@ func _enter_tree() -> void:
 		push_error("关卡配置格式错误：" + config_path)
 		return
 	config = parsed
+	hard_enabled = HardMode.is_enabled()
+	if hard_enabled:
+		hard_rule = HardMode.get_rule(int(config.level))
 	sandbox = $Sandbox
 	combat = $Sandbox/World/Combat
 	combat.set("enemy_fire_enabled", bool(config.enemy_fire_enabled))
@@ -167,6 +178,18 @@ func _show_page(index: int) -> void:
 func _start_level() -> void:
 	if visited.has(false):
 		return
+	if hard_enabled:
+		if hard_rule.is_empty():
+			page_label.text = "困难模式规则读取失败，请返回菜单。"
+			return
+		var error := HardMode.equipment_error(hard_rule, Loadout.get_slots())
+		if not error.is_empty():
+			page_label.text = error
+			return
+		hard_started = true
+		hard_elapsed_usec = 0
+		hard_clock_usec = Time.get_ticks_usec()
+		hard_clock_running = not sandbox.manually_paused and not sandbox.is_orbit_editing()
 	dialog.visible = false
 	get_tree().paused = false
 	var audio := get_node_or_null("/root/AudioManager")
@@ -174,11 +197,36 @@ func _start_level() -> void:
 		audio.start_level_music()
 
 func _process(_delta: float) -> void:
+	if hard_enabled and hard_started and not completed:
+		_update_hard_clock()
+		if hard_rule.time_limit_seconds != null:
+			var remaining := maxf(0.0, float(hard_rule.time_limit_seconds) - float(hard_elapsed_usec) / 1000000.0)
+			objective.text = "%s\n困难模式剩余时间：%.1f 秒" % [str(config.objective), remaining]
+			if remaining <= 0.0:
+				_fail("困难模式：已超过关卡时限，任务失败。")
 	if is_instance_valid(victory_controls) and victory_controls.visible:
 		var pulse: float = 0.5 + 0.5 * sin(float(Time.get_ticks_msec()) * 0.005)
 		var tint := Color(1.0, 0.8 + 0.2 * pulse, 0.45 + 0.55 * pulse)
 		victory_next.modulate = tint
 		victory_menu.modulate = tint
+
+func _notification(what: int) -> void:
+	if not hard_enabled or not hard_started or completed:
+		return
+	if what == NOTIFICATION_PAUSED:
+		if hard_clock_running:
+			hard_elapsed_usec += Time.get_ticks_usec() - hard_clock_usec
+		hard_clock_running = false
+	elif what == NOTIFICATION_UNPAUSED:
+		hard_clock_usec = Time.get_ticks_usec()
+		hard_clock_running = not sandbox.manually_paused and not sandbox.is_orbit_editing() and not combat.dead
+
+func _update_hard_clock() -> void:
+	var now := Time.get_ticks_usec()
+	if hard_clock_running:
+		hard_elapsed_usec += now - hard_clock_usec
+	hard_clock_usec = now
+	hard_clock_running = not get_tree().paused and not sandbox.manually_paused and not sandbox.is_orbit_editing() and not combat.dead
 
 func _physics_process(_delta: float) -> void:
 	if config.is_empty() or completed or combat.dead or get_tree().paused or dialog.visible:
@@ -254,6 +302,17 @@ func _update_objective() -> void:
 func _win() -> void:
 	if completed or combat.dead:
 		return
+	if hard_enabled:
+		if not hard_started:
+			return
+		_update_hard_clock()
+		if hard_rule.time_limit_seconds != null and hard_elapsed_usec >= int(float(hard_rule.time_limit_seconds) * 1000000.0):
+			_fail("困难模式：已超过关卡时限，任务失败。")
+			return
+		var error := HardMode.equipment_error(hard_rule, Loadout.get_slots())
+		if not error.is_empty():
+			_fail(error)
+			return
 	completed = true
 	var audio := get_node_or_null("/root/AudioManager")
 	if audio:

@@ -378,6 +378,43 @@ func run() -> void:
 	battle.spawn_debris(Vector2(320, 100), false)
 	battle.advance(0.01, scene.ship.position)
 	check(attacker.locked and not battle.missiles.is_empty(), "敌机扇区无遮挡限制并自动开火")
+	battle._update_lock_warning()
+	check(battle.hud.get_node("LockWarning").visible and audio.is_enemy_locked_requested(), "导弹敌舰触发锁定警告与音效")
+	for weapon in ["carrier", "satellite_deployer"]:
+		attacker.weapon = weapon
+		attacker.locked = true
+		attacker.scan_angle = 0.0
+		battle._sync_lock_audio()
+		battle._update_lock_warning()
+		check(not audio.is_enemy_locked_requested() and not battle.hud.get_node("LockWarning").visible, weapon + " 残留锁定不触发警告及音效")
+		battle.enemy_fire_enabled = false
+		battle.advance(0.01, scene.ship.position)
+		check(not attacker.locked and attacker.scan_angle == 0.0, weapon + " 不扫描、不锁定")
+		battle.refresh_visuals()
+		check(not attacker.radar.visible, weapon + " 不显示雷达锁定图形")
+	battle.enemy_fire_enabled = true
+	attacker.weapon = "missile"
+	attacker.scan_angle = 0.0
+	battle.advance(0.01, scene.ship.position)
+	check(attacker.locked and audio.is_enemy_locked_requested(), "切回导弹敌舰后正常锁定和警报")
+	var original_enemy_config_path: String = original_enemy.config_path
+	for weapon in ["carrier", "satellite_deployer"]:
+		original_enemy.config_path = "res://data/enemy_carrier.json" if weapon == "carrier" else "res://data/enemy_deployer.json"
+		scene.reset()
+		attacker = battle.enemies[0]
+		check(attacker.weapon == weapon and not attacker.locked and not audio.is_enemy_locked_requested(), weapon + " 配置重置后不锁定且警报关闭")
+		battle.satellites.clear()
+		scene.ship.position = Vector2(340, 100)
+		attacker.node.position = Vector2(300, 100)
+		attacker.scan_angle = 0.0
+		battle.enemy_fire_enabled = false
+		battle.advance(0.01, scene.ship.position)
+		battle._update_lock_warning()
+		check(not attacker.locked and not battle.hud.get_node("LockWarning").visible and not audio.is_enemy_locked_requested(), weapon + " 配置实际战斗路径不触发锁定")
+	original_enemy.config_path = original_enemy_config_path
+	scene.reset()
+	battle.enemy_fire_enabled = true
+	attacker = battle.enemies[0]
 	scene.manually_paused = true
 	var frozen_scan: float = battle.scan_angle
 	var frozen_enemy_scan: float = attacker.scan_angle
@@ -883,8 +920,8 @@ func run() -> void:
 	left = battle.carrier_squadrons[0]
 	right = battle.carrier_squadrons[1]
 	battle._advance_carrier_squadrons(1.0, previous_positions)
-	check(absf(left.position_world.distance_to(center) - left.radius) < 0.001 and left.position_world.distance_to(right.position_world) > 0.1, "公转半径固定且方向相反")
-	var orbit_duration: float = TAU * left.radius / float(battle.config.carrier.orbit_speed_km_s)
+	check(preload("res://scripts/kepler_orbit.gd").residual(left.orbit, left.position_world - center) < 0.0001 and left.position_world.distance_to(right.position_world) > 0.1, "沿母舰轨道反向公转")
+	var orbit_duration: float = left.orbit_duration
 	scene.ship.global_position = origin + Vector2(50, 0)
 	battle._advance_carrier_squadrons(orbit_duration - 1.0, previous_positions)
 	check(left.returning and right.returning and left.position_world.distance_to(origin) < 0.01, "完成一圈后转为返航")
@@ -945,6 +982,107 @@ func run() -> void:
 	check(battle.carrier_squadrons.size() == 2 and battle.carrier_squadrons[0].team == "enemy" and battle.carrier_squadrons[0].members.size() == 9, "敌方发射两队各九架")
 	var enemy_squad = battle.carrier_squadrons[0]
 	battle._launch_carrier_squadrons()
+	var defense_player = battle.carrier_squadrons[2]
+	battle.enemy_fire_enabled = false
+	battle.weapon_slots[0].id = "point_defense"
+	battle.weapon_slots[0].active = true
+	battle.weapon_slots[0].remaining = 10.0
+	var near_player: Vector2 = scene.ship.global_position
+	for member in enemy_squad.members:
+		member.current = near_player
+		member.node.global_position = near_player
+	for member in defense_player.members:
+		member.current = near_player
+		member.node.global_position = near_player
+	scene.manually_paused = true
+	battle.advance(0.01, scene.ship.position)
+	check(enemy_squad.members[0].alive, "暂停时近防不拦截舰载机")
+	scene.manually_paused = false
+	battle.advance(0.01, scene.ship.position)
+	check(not enemy_squad.members[0].alive and not battle.carrier_squadrons.has(enemy_squad), "近防逐机拦截并清理敌编队")
+	check(defense_player.members[0].alive, "近防不拦截友方舰载机")
+	battle._clear_carrier_squadrons()
+	battle._launch_enemy_carrier(carrier_enemy.node)
+	enemy_squad = battle.carrier_squadrons[0]
+	battle._launch_carrier_squadrons()
+	defense_player = battle.carrier_squadrons[2]
+	battle._start_dogfight(defense_player, enemy_squad, near_player)
+	for member in enemy_squad.members:
+		member.current = near_player
+		member.node.global_position = near_player
+	battle.advance(0.01, scene.ship.position)
+	check(not battle.carrier_squadrons.has(enemy_squad) and defense_player.dogfight == null and battle.dogfights.is_empty(), "狗斗中拦截敌机后解除狗斗")
+	battle._clear_carrier_squadrons()
+	battle._launch_enemy_carrier(carrier_enemy.node)
+	enemy_squad = battle.carrier_squadrons[0]
+	var lure = preload("res://scenes/decoy_satellite.tscn").instantiate()
+	battle.add_child(lure)
+	lure.initialize(near_player + Vector2(40, 0), Vector2.ZERO, Vector2.ZERO, 100000.0, "player", {"attraction_radius_km": 100.0, "radius_km": 0.01})
+	battle.decoy_satellites.append(lure)
+	for member in enemy_squad.members:
+		member.current = near_player
+		member.node.global_position = near_player
+		member.decoy = lure
+	battle.advance(0.01, scene.ship.position)
+	check(not enemy_squad.members[0].alive and is_instance_valid(lure), "近防可拦截追逐诱饵的敌机且不摧毁卫星")
+	battle.decoy_satellites.erase(lure)
+	lure.queue_free()
+	battle._clear_carrier_squadrons()
+	var saved_defense_range: float = battle.config.point_defense.range_km
+	battle.config.point_defense.range_km = 25.0
+	var bend_segments: Array[Dictionary] = [{"start": Vector2(-40, 50), "end": Vector2(0, 50), "t0": 0.0, "t1": 0.5}, {"start": Vector2(0, 50), "end": Vector2(40, 0), "t0": 0.5, "t1": 1.0}]
+	check(is_inf(battle._carrier_defense_time(enemy_squad, bend_segments, Vector2.ZERO, Vector2.ZERO, 1.0, 1.0)), "受诱折线不以首尾弦误判近防命中")
+	for defense_radius in [30.0, 5.0]:
+		battle._launch_enemy_carrier(carrier_enemy.node)
+		enemy_squad = battle.carrier_squadrons[0]
+		battle._launch_carrier_squadrons()
+		defense_player = battle.carrier_squadrons[2]
+		battle._start_dogfight(defense_player, enemy_squad, near_player + Vector2(500, 0))
+		var moving_lure = preload("res://scenes/decoy_satellite.tscn").instantiate()
+		battle.add_child(moving_lure)
+		moving_lure.initialize(near_player, Vector2.ZERO, Vector2.ZERO, 0.000001, "player", {"attraction_radius_km": 100.0, "radius_km": 10.0})
+		battle.decoy_satellites.append(moving_lure)
+		for i in range(enemy_squad.members.size()):
+			var member: Dictionary = enemy_squad.members[i]
+			member.alive = i == 0
+			member.current = near_player + Vector2(40, 0)
+			member.node.global_position = member.current
+			member.decoy = moving_lure
+		battle.config.point_defense.range_km = defense_radius
+		battle.weapon_slots[0].active = true
+		battle.weapon_slots[0].remaining = 10.0
+		battle.advance(10.0, scene.ship.position)
+		check(not enemy_squad.members[0].alive and enemy_squad.members[0].has("defense_hit_time") == (defense_radius > 10.0), "近防和诱饵撞毁按首次事件时刻结算")
+		battle.decoy_satellites.erase(moving_lure)
+		moving_lure.queue_free()
+		battle._clear_carrier_squadrons()
+	battle.config.point_defense.range_km = saved_defense_range
+	for defense_remaining in [0.25, 1.0]:
+		battle._launch_enemy_carrier(carrier_enemy.node)
+		enemy_squad = battle.carrier_squadrons[0]
+		battle._launch_carrier_squadrons()
+		defense_player = battle.carrier_squadrons[2]
+		battle._start_dogfight(defense_player, enemy_squad, near_player + Vector2(500, 0))
+		for i in range(enemy_squad.members.size()):
+			var member: Dictionary = enemy_squad.members[i]
+			member.alive = i == 0
+			member.current = near_player + Vector2(100, 0)
+			member.node.global_position = member.current
+		var defense_range: float = battle.config.point_defense.range_km
+		var old_position: Vector2 = scene.ship.position
+		scene.ship.position += Vector2(100, 0)
+		battle.weapon_slots[0].active = true
+		battle.weapon_slots[0].remaining = defense_remaining
+		battle.advance(1.0, old_position)
+		if defense_range < 75.0:
+			check(enemy_squad.members[0].alive == (defense_remaining < 1.0), "玩家移动相对扫掠尊重近防到期时间")
+		scene.ship.position = old_position
+		battle._clear_carrier_squadrons()
+	battle.weapon_slots[0].active = false
+	battle.enemy_fire_enabled = true
+	battle._launch_enemy_carrier(carrier_enemy.node)
+	enemy_squad = battle.carrier_squadrons[0]
+	battle._launch_carrier_squadrons()
 	var player_squad = battle.carrier_squadrons[2]
 	battle._start_dogfight(player_squad, enemy_squad)
 	var old_probability: float = battle.config.carrier.dogfight_loss_probability
@@ -962,6 +1100,8 @@ func run() -> void:
 	carrier_enemy.node.position = scene.ship.position * 2.0
 	check(not battle._launch_enemy_carrier(carrier_enemy.node), "轨道高度差过大不能发射")
 	battle._clear_carrier_squadrons()
+	scene.velocity = Vector2.ZERO
+	carrier_enemy.velocity = Vector2.ZERO
 	carrier_enemy.node.position = scene.ship.position
 	battle._launch_enemy_carrier(carrier_enemy.node)
 	battle._launch_carrier_squadrons()
@@ -976,6 +1116,8 @@ func run() -> void:
 	enemy_squad.elapsed = duration - 0.1
 	enemy_squad.start_angle = -enemy_squad.direction * TAU * enemy_squad.elapsed / duration
 	player_squad.start_angle = enemy_squad.direction * speed * 1.1 / enemy_squad.radius
+	enemy_squad.orbit.angle = enemy_squad.start_angle
+	player_squad.orbit.angle = player_squad.start_angle
 	for squadron in [enemy_squad, player_squad]:
 		squadron.position_world = squadron.center + Vector2.from_angle(0.0 if squadron == enemy_squad else player_squad.start_angle) * squadron.radius
 		for member in squadron.members:
@@ -996,6 +1138,8 @@ func run() -> void:
 	enemy_squad.elapsed = duration - 0.1
 	enemy_squad.start_angle = -enemy_squad.direction * TAU * enemy_squad.elapsed / duration
 	player_squad.start_angle = enemy_squad.direction * speed * 0.1 / enemy_squad.radius
+	enemy_squad.orbit.angle = enemy_squad.start_angle
+	player_squad.orbit.angle = player_squad.start_angle
 	for squadron in [enemy_squad, player_squad]:
 		squadron.position_world = squadron.center + Vector2.from_angle(0.0 if squadron == enemy_squad else player_squad.start_angle) * squadron.radius
 		for member in squadron.members:
@@ -1033,6 +1177,8 @@ func run() -> void:
 			battle._clear_squadron(battle.carrier_squadrons[2])
 			battle._clear_squadron(battle.carrier_squadrons[1])
 			player_squad.start_angle = -0.15
+			enemy_squad.orbit.angle = 0.0
+			player_squad.orbit.angle = player_squad.start_angle
 			for squadron in [enemy_squad, player_squad]:
 				squadron.position_world = squadron.center + Vector2.from_angle(0.0 if squadron == enemy_squad else player_squad.start_angle) * squadron.radius
 				for i in range(squadron.members.size()):
@@ -1063,6 +1209,7 @@ func run() -> void:
 	battle._clear_squadron(battle.carrier_squadrons[2])
 	for squadron in [late_squad, early_squad, player_squad]:
 		squadron.start_angle = 0.0 if squadron == player_squad else (0.20 if squadron == late_squad else 0.10)
+		squadron.orbit.angle = squadron.start_angle
 		squadron.direction = -1.0 if squadron != player_squad else 1.0
 		squadron.position_world = squadron.center + Vector2.from_angle(squadron.start_angle) * squadron.radius
 		for i in range(squadron.members.size()):

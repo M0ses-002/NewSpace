@@ -1,13 +1,18 @@
 extends Control
 
 const Progress = preload("res://scripts/level_progress.gd")
+const Difficulty = preload("res://scripts/hard_mode.gd")
 
 @onready var continue_button: Button = $Center/Panel/Layout/Continue
 @onready var confirm: ConfirmationDialog = $Confirm
 @onready var notice: AcceptDialog = $Notice
+@onready var difficulty_button: CheckButton = $Difficulty
 
 func _ready() -> void:
 	get_tree().paused = false
+	difficulty_button.set_pressed_no_signal(Difficulty.is_enabled())
+	_update_difficulty_label()
+	difficulty_button.toggled.connect(_set_difficulty)
 	continue_button.disabled = Progress.load_level() == 0
 	$Center/Panel/Layout/New.pressed.connect(_new_game)
 	continue_button.pressed.connect(_continue_game)
@@ -15,6 +20,16 @@ func _ready() -> void:
 	$Center/Panel/Layout/Settings.pressed.connect(_open_settings)
 	$Center/Panel/Layout/Quit.pressed.connect(func() -> void: get_tree().quit())
 	confirm.confirmed.connect(_start_new)
+
+func _set_difficulty(enabled: bool) -> void:
+	if not Difficulty.set_enabled(enabled):
+		difficulty_button.set_pressed_no_signal(Difficulty.is_enabled())
+		notice.dialog_text = "无法保存困难模式设置，请检查用户目录权限。"
+		notice.popup_centered()
+	_update_difficulty_label()
+
+func _update_difficulty_label() -> void:
+	difficulty_button.text = "困难模式：开启" if difficulty_button.button_pressed else "困难模式：关闭"
 
 func _new_game() -> void:
 	if FileAccess.file_exists(Progress.SAVE_PATH):

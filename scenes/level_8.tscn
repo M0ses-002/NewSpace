@@ -1,0 +1,54 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/level_controller.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/level_base.tscn" id="2"]
+[ext_resource type="PackedScene" path="res://scenes/enemy.tscn" id="3"]
+[ext_resource type="PackedScene" path="res://scenes/air_force.tscn" id="4"]
+
+[node name="Level8" type="Node"]
+script = ExtResource("1")
+config_path = "res://data/level_8.json"
+
+[node name="Sandbox" parent="." instance=ExtResource("2")]
+
+[node name="Enemy1" parent="Sandbox/World/Combat/Enemies" instance=ExtResource("3")]
+position = Vector2(-220, 50)
+config_path = "res://data/enemy_default.json"
+
+[node name="Enemy2" parent="Sandbox/World/Combat/Enemies" instance=ExtResource("3")]
+position = Vector2(0, -220)
+config_path = "res://data/enemy_carrier.json"
+
+[node name="Enemy3" parent="Sandbox/World/Combat/Enemies" instance=ExtResource("3")]
+position = Vector2(220, 50)
+config_path = "res://data/enemy_deployer.json"
+
+[node name="AirForces" type="Node2D" parent="Sandbox/World"]
+
+[node name="AirForce1" parent="Sandbox/World/AirForces" instance=ExtResource("4")]
+planet_path = NodePath("../../Planet")
+
+[node name="Start" parent="Sandbox/World/AirForces/AirForce1" index="0"]
+position = Vector2(46, -22)
+
+[node name="Apex" parent="Sandbox/World/AirForces/AirForce1" index="1"]
+position = Vector2(4, -256)
+
+[node name="End" parent="Sandbox/World/AirForces/AirForce1" index="2"]
+position = Vector2(-48, -19)
+
+[node name="AirForce2" parent="Sandbox/World/AirForces" instance=ExtResource("4")]
+planet_path = NodePath("../../Planet")
+
+[node name="Start" parent="Sandbox/World/AirForces/AirForce2" index="0"]
+position = Vector2(-46, -22)
+
+[node name="Apex" parent="Sandbox/World/AirForces/AirForce2" index="1"]
+position = Vector2(-4, -190)
+
+[node name="End" parent="Sandbox/World/AirForces/AirForce2" index="2"]
+position = Vector2(48, -19)
+
+[editable path="Sandbox"]
+[editable path="Sandbox/World/AirForces/AirForce1"]
+[editable path="Sandbox/World/AirForces/AirForce2"]

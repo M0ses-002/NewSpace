@@ -116,7 +116,7 @@ func run() -> void:
 	await process_frame
 	check(not paused, "第五关胜利后场景树未暂停")
 	check(level.victory_controls.visible, "胜利后顶部操作可见")
-	check(not level.victory_next.visible, "最后一关隐藏“下一关”按钮")
+	check(level.victory_next.visible, "第五关显示“下一关”按钮")
 	check(not level.dialog.visible, "通关后教学对话框隐藏")
 	check(level.completed, "通关后 completed=true")
 

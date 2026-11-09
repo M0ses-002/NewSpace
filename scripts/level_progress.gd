@@ -1,7 +1,7 @@
 extends RefCounted
 
 const SAVE_PATH := "user://level_progress.json"
-const LAST_LEVEL := 7
+const LAST_LEVEL := 8
 
 static func load_level() -> int:
 	if not FileAccess.file_exists(SAVE_PATH):

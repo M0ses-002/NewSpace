@@ -115,6 +115,6 @@ func parse(source: Dictionary) -> Dictionary:
 	if not data.get("color") is String or not Color.html_is_valid(data.color):
 		return {}
 	var weapon: Variant = data.get("weapon", "missile")
-	if weapon != "missile" and weapon != "carrier":
+	if weapon not in ["missile", "carrier", "satellite_deployer"]:
 		return {}
 	return data.duplicate(true)

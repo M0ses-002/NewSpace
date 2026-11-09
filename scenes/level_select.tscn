@@ -75,6 +75,11 @@ custom_minimum_size = Vector2(190, 48)
 layout_mode = 2
 text = "第七关"
 
+[node name="Level8" type="Button" parent="Center/Panel/Layout/Levels"]
+custom_minimum_size = Vector2(190, 48)
+layout_mode = 2
+text = "第八关"
+
 [node name="Back" type="Button" parent="Center/Panel/Layout"]
 custom_minimum_size = Vector2(0, 45)
 layout_mode = 2

@@ -25,7 +25,7 @@ func run() -> void:
 		check(battle.get_node("InitialDebris").get_child_count() == expected[2] and battle.debris.size() == expected[2], "关卡 %d 初始碎片节点及运行状态数量" % number)
 		check(paused, "关卡 %d 教学期间暂停" % number)
 		check(level.dialog.visible, "关卡 %d 教学可见" % number)
-		check(level.config.tutorial.size() == [2, 1, 3, 3][number - 1], "关卡 %d 教程页数" % number)
+		check(level.config.tutorial.size() == [4, 2, 4, 2][number - 1], "关卡 %d 教程页数" % number)
 		if level.config.tutorial.size() > 1:
 			check(level.start_button.disabled, "关卡 %d 未读完不能开始" % number)
 			level._start_level()
@@ -129,7 +129,7 @@ func run() -> void:
 		paused = false
 		level.queue_free()
 		await process_frame
-	var final_level = load("res://scenes/level_7.tscn").instantiate()
+	var final_level = load("res://scenes/level_8.tscn").instantiate()
 	root.add_child(final_level)
 	await process_frame
 	for i in range(final_level.config.tutorial.size()):

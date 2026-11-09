@@ -45,15 +45,15 @@ func run() -> void:
 		check(not bool(config.get("enemy_fire_enabled", true)), "第五关关闭敌机开火")
 		check(not bool(config.get("satellite_defense_enabled", true)), "第五关关闭卫星防御")
 		var tutorial: Array = config.get("tutorial", [])
-		check(tutorial.size() == 4, "教程共四页")
+		check(tutorial.size() == 3, "教程共三页")
 		for entry in tutorial:
 			var image := str(entry.get("image", ""))
 			check(str(entry.get("text", "")).length() > 0, "教程文字非空")
 			var texture = load(image)
 			check(texture is Texture2D, "教程图片可加载：" + image)
-	check(Progress.LAST_LEVEL == 7, "LAST_LEVEL 为 7")
+	check(Progress.LAST_LEVEL == 8, "LAST_LEVEL 为 8")
 	check(Progress.scene_path(5) == "res://scenes/level_5.tscn", "第五关场景路径正确")
-	for number in range(1, 8):
+	for number in range(1, Progress.LAST_LEVEL + 1):
 		check(FileAccess.file_exists(Progress.scene_path(number)), "第 %d 关场景存在" % number)
 	var controller := read_text("res://scripts/level_controller.gd")
 	var win_body := function_body(controller, "func _win()")
@@ -80,7 +80,7 @@ func run() -> void:
 	level5._win()
 	check(level5.completed, "第五关 _win 设置 completed")
 	check(level5.victory_next.visible, "第五关显示下一关按钮")
-	check(level5.victory_controls.visible, "最后一关仍显示顶部操作")
+	check(level5.victory_controls.visible, "第五关显示顶部操作")
 	check(not level5.dialog.visible, "通关后不显示教学对话")
 	check(not root.get_tree().paused, "胜利后场景树不暂停")
 	check(Progress.load_level() == 6, "第五关通关解锁第六关")

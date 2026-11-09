@@ -12,6 +12,7 @@ const Debris = preload("res://scenes/debris.tscn")
 const Missile = preload("res://scenes/missile.tscn")
 const Loadout = preload("res://scripts/loadout.gd")
 const CarrierSquadron = preload("res://scenes/carrier_squadron.tscn")
+const DecoySatellite = preload("res://scenes/decoy_satellite.tscn")
 
 var config: Dictionary
 var controller: Node
@@ -23,6 +24,9 @@ var debris: Array[Dictionary] = []
 var missiles: Array[Dictionary] = []
 var air_forces: Array = []
 var carrier_squadrons: Array = []
+var decoy_satellites: Array[Node2D] = []
+var decoy_config: Dictionary
+var player_deployer_used := false
 var dogfights: Array[Dictionary] = []
 var dogfight_protection: Dictionary = {}
 var player_radar: Node2D
@@ -48,6 +52,9 @@ func setup(owner_controller: Node) -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	controller = owner_controller
 	config = Config.load_config()
+	var decoy_file := FileAccess.open("res://data/decoy_satellite.json", FileAccess.READ)
+	decoy_config = JSON.parse_string(decoy_file.get_as_text())
+	player_deployer_used = false
 	air_forces.clear()
 	var air_container := get_parent().get_node_or_null("AirForces")
 	if air_container:
@@ -117,6 +124,7 @@ func setup(owner_controller: Node) -> void:
 			var gravity: float = controller._gravity(enemy.position).length()
 			initial_velocity = Vector2(-enemy.position.y, enemy.position.x).normalized() * sqrt(gravity * radius)
 		enemy.state = {"node": enemy, "config": enemy.entity_config, "velocity": initial_velocity, "health": float(enemy.entity_config.health), "cooldown": 0.0, "cooldown_started": false, "radar": enemy.get_node_or_null(enemy.radar_path) if not enemy.radar_path.is_empty() else null, "scan_angle": 0.0, "locked": false, "carrier_cooldown": 0.0, "weapon": str(enemy.entity_config.get("weapon", "missile"))}
+		enemy.state.deployer_cooldown = float(decoy_config.enemy_cooldown_real_s) if enemy.state.weapon == "satellite_deployer" else 0.0
 		enemies.append(enemy.state)
 	_update_satellites(0.0)
 	_update_point_defense_visual()
@@ -128,6 +136,9 @@ func _restart_level() -> void:
 
 func reset_battle() -> void:
 	_clear_carrier_squadrons()
+	for decoy in decoy_satellites:
+		decoy.queue_free()
+	decoy_satellites.clear()
 	for satellite in bombardment_satellites:
 		satellite.reset_bombs()
 	bombardment_satellites.clear()
@@ -231,7 +242,7 @@ func max_step() -> float:
 		angular = maxf(angular, enemy.velocity.length() / maxf(enemy.node.position.length(), 1.0))
 	for squadron in carrier_squadrons:
 		if is_instance_valid(squadron) and not squadron.returning:
-			angular = maxf(angular, float(config.carrier.orbit_speed_km_s) / squadron.radius)
+			angular = maxf(angular, squadron.max_angular_speed())
 	return minf(0.25, 0.01 / maxf(maxf(maxf(angular, orbital), scanning), 0.000001))
 
 func advance_cooldowns(real_delta: float) -> void:
@@ -244,11 +255,12 @@ func advance_cooldowns(real_delta: float) -> void:
 			slot.cooldown = maxf(0.0, float(slot.cooldown) - real_delta)
 	for enemy in enemies:
 		enemy.carrier_cooldown = maxf(0.0, float(enemy.get("carrier_cooldown", 0.0)) - real_delta)
+		enemy.deployer_cooldown = maxf(0.0, float(enemy.get("deployer_cooldown", 0.0)) - real_delta)
 		if enemy.get("cooldown_started", false):
 			enemy.cooldown_started = false
 		else:
 			enemy.cooldown = maxf(0.0, enemy.cooldown - real_delta)
-		enemy.node.get_node("Health").text = "%d · CD %.1f现实秒" % [ceili(enemy.health), enemy.get("carrier_cooldown", 0.0) if enemy.get("weapon", "missile") == "carrier" else enemy.cooldown]
+		enemy.node.get_node("Health").text = "%d · CD %.1f现实秒" % [ceili(enemy.health), enemy.get("deployer_cooldown", 0.0) if enemy.get("weapon", "missile") == "satellite_deployer" else (enemy.get("carrier_cooldown", 0.0) if enemy.get("weapon", "missile") == "carrier" else enemy.cooldown)]
 	for key in dogfight_protection.keys():
 		dogfight_protection[key] -= real_delta
 		if dogfight_protection[key] <= 0.0:
@@ -273,6 +285,10 @@ func advance(dt: float, old_player: Vector2) -> void:
 	for item in enemies:
 		previous_targets[item.node.get_instance_id()] = item.node.position
 	_update_satellites(dt)
+	var previous_decoys: Dictionary = {}
+	for decoy in decoy_satellites:
+		previous_decoys[decoy.get_instance_id()] = decoy.global_position
+		decoy.advance(dt)
 	var player: Vector2 = controller.ship.position
 	_advance_air_forces(dt, controller.ship.get_parent().to_global(old_player), controller.ship.global_position)
 	for satellite in satellites:
@@ -308,22 +324,27 @@ func advance(dt: float, old_player: Vector2) -> void:
 			var old_sat: Vector2 = previous_targets[satellite.node.get_instance_id()]
 			if (not capture_initialized or old_enemy.distance_to(old_sat) > satellite.config.capture_radius_km) and segment_distance(old_enemy - old_sat, enemy.node.position - satellite.node.position, Vector2.ZERO) <= satellite.config.capture_radius_km:
 				satellite.owner = "enemy"
-		if enemy.locked and enemy.node.position.distance_to(player) > float(config.radar.far_radius_km):
+		if enemy.get("weapon", "missile") == "missile":
+			if enemy.locked and enemy.node.position.distance_to(player) > float(config.radar.far_radius_km):
+				enemy.locked = false
+			if not enemy.locked:
+				var enemy_scan: float = enemy.scan_angle
+				var rotation: float = float(config.radar.rotation_rad_s) * dt
+				enemy.scan_angle = fposmod(enemy_scan + rotation, TAU)
+				enemy.locked = _sector_swept(enemy.node.position, player, enemy_scan, rotation)
+			if enemy.locked:
+				enemy.scan_angle = (player - enemy.node.position).angle()
+				if enemy_fire_enabled and enemy.cooldown <= 0.0 and _launch(enemy.node.position, controller.ship, "enemy"):
+					enemy.cooldown = config.missile.cooldown_real_s
+					enemy.cooldown_started = true
+		else:
 			enemy.locked = false
-		if not enemy.locked:
-			var enemy_scan: float = enemy.scan_angle
-			var rotation: float = float(config.radar.rotation_rad_s) * dt
-			enemy.scan_angle = fposmod(enemy_scan + rotation, TAU)
-			enemy.locked = _sector_swept(enemy.node.position, player, enemy_scan, rotation)
-		if enemy.locked:
-			enemy.scan_angle = (player - enemy.node.position).angle()
-			if enemy_fire_enabled and enemy.get("weapon", "missile") == "missile" and enemy.cooldown <= 0.0 and _launch(enemy.node.position, controller.ship, "enemy"):
-				enemy.cooldown = config.missile.cooldown_real_s
-				enemy.cooldown_started = true
 		if enemy_fire_enabled and enemy.get("weapon", "missile") == "carrier" and enemy.get("carrier_cooldown", 0.0) <= 0.0 and _launch_enemy_carrier(enemy.node):
 			enemy.carrier_cooldown = float(config.carrier.cooldown_real_s)
-		enemy.node.get_node("Health").text = "%d · CD %.1f现实秒" % [ceili(enemy.health), enemy.get("carrier_cooldown", 0.0) if enemy.get("weapon", "missile") == "carrier" else enemy.cooldown]
-	_advance_carrier_squadrons(dt, previous_targets)
+		if enemy_fire_enabled and enemy.get("weapon", "missile") == "satellite_deployer" and enemy.get("deployer_cooldown", 0.0) <= 0.0 and _deploy_decoy(enemy.node, enemy.velocity, 0, "enemy"):
+			enemy.deployer_cooldown = float(decoy_config.enemy_cooldown_real_s)
+		enemy.node.get_node("Health").text = "%d · CD %.1f现实秒" % [ceili(enemy.health), enemy.get("deployer_cooldown", 0.0) if enemy.get("weapon", "missile") == "satellite_deployer" else (enemy.get("carrier_cooldown", 0.0) if enemy.get("weapon", "missile") == "carrier" else enemy.cooldown)]
+	_advance_carrier_squadrons(dt, previous_targets, previous_decoys)
 	for satellite in bombardment_satellites:
 		satellite.advance_bombs(dt)
 	capture_initialized = true
@@ -417,6 +438,20 @@ func advance(dt: float, old_player: Vector2) -> void:
 	_update_hud()
 	_sync_lock_audio()
 
+func _deploy_decoy(source: Node2D, velocity: Vector2, body_index: int, team: String) -> bool:
+	if body_index < 0 or body_index >= controller.bodies.size():
+		return false
+	var body: Dictionary = controller.body_at(body_index)
+	var node = DecoySatellite.instantiate()
+	add_child(node)
+	var center: Vector2 = controller.ship.get_parent().to_global(body.center)
+	var world_velocity: Vector2 = source.get_parent().global_transform.basis_xform(velocity)
+	if not node.initialize(source.global_position, world_velocity, center, float(body.mu), team, decoy_config):
+		node.queue_free()
+		return false
+	decoy_satellites.append(node)
+	return true
+
 func _launch_carrier_squadrons() -> bool:
 	var origin: Vector2 = controller.ship.global_position
 	if controller.focus_index < 0 or controller.focus_index >= controller.bodies.size():
@@ -429,7 +464,7 @@ func _launch_carrier_squadrons() -> bool:
 	for direction in [-1.0, 1.0]:
 		var squadron = CarrierSquadron.instantiate()
 		add_child(squadron)
-		squadron.launch(origin, orbit_center, direction, config.carrier)
+		squadron.launch(origin, orbit_center, direction, config.carrier, "player", controller.ship, controller.ship.get_parent().global_transform.basis_xform(controller.velocity), controller.focus_mu())
 		carrier_squadrons.append(squadron)
 	return true
 
@@ -441,13 +476,65 @@ func _clear_carrier_squadrons() -> void:
 	dogfights.clear()
 	dogfight_protection.clear()
 
-func _advance_carrier_squadrons(dt: float, previous_targets: Dictionary) -> void:
+func _carrier_defense_time(squadron: Node2D, segments: Array[Dictionary], player_start: Vector2, player_end: Vector2, dt: float, limit: float) -> float:
+	var hit_time := INF
+	for segment in segments:
+		var t0: float = segment.t0
+		var t1: float = segment.t1
+		if t0 > limit or t1 <= t0:
+			continue
+		var end_time := minf(t1, limit)
+		var end_pos: Vector2 = segment.start.lerp(segment.end, (end_time - t0) / (t1 - t0))
+		var relative_start: Vector2 = segment.start - player_start.lerp(player_end, t0 / dt)
+		var relative_end: Vector2 = end_pos - player_start.lerp(player_end, end_time / dt)
+		var fraction: float = squadron._entry_fraction(relative_start, relative_end, float(config.point_defense.range_km))
+		if not is_inf(fraction):
+			hit_time = minf(hit_time, lerpf(t0, end_time, fraction))
+	return hit_time
+
+func _advance_carrier_squadrons(dt: float, previous_targets: Dictionary, previous_decoys: Dictionary = {}) -> void:
 	var player: Vector2 = controller.ship.global_position
 	for squadron in carrier_squadrons.duplicate():
 		if squadron.team == "enemy" and (not is_instance_valid(squadron.mothership) or not squadron.mothership.visible):
 			_clear_squadron(squadron)
 			continue
+		var starts: Array[Vector2] = []
+		for member in squadron.members:
+			starts.append(member.get("defense_dogfight_start", member.current))
+			member.erase("defense_dogfight_start")
+			member.erase("defense_hit_time")
 		squadron.advance(dt, player if squadron.team == "player" else squadron.mothership.global_position)
+		squadron.advance_decoys(dt, decoy_satellites, previous_decoys)
+		if squadron.team == "enemy":
+			var player_start: Vector2 = controller.ship.get_parent().to_global(previous_targets.get(controller.ship.get_instance_id(), controller.ship.position))
+			for i in range(squadron.members.size()):
+				var member: Dictionary = squadron.members[i]
+				if not member.alive and not member.has("decoy_collision_time"):
+					continue
+				var segments: Array[Dictionary] = []
+				if member.has("decoy_step"):
+					var entry_time: float = float(member.decoy_step)
+					segments.append({"start": starts[i], "end": member.previous, "t0": 0.0, "t1": entry_time})
+					segments.append({"start": member.previous, "end": member.current, "t0": entry_time, "t1": dt})
+				else:
+					segments.append({"start": starts[i], "end": member.current, "t0": 0.0, "t1": dt})
+				var hit_time := INF
+				for slot in weapon_slots:
+					if slot.id != "point_defense" or not slot.active or float(slot.remaining) <= 0.0:
+						continue
+					var limit: float = minf(dt, minf(float(slot.remaining), float(member.get("decoy_collision_time", dt))))
+					hit_time = minf(hit_time, _carrier_defense_time(squadron, segments, player_start, player, dt, limit))
+				if not is_inf(hit_time):
+					member.defense_hit_time = hit_time
+					member.alive = false
+					member.node.visible = false
+					for sweep in squadron.orbit_sweeps:
+						if sweep.member == member:
+							var duration: float = float(sweep.get("end_time", squadron.orbit_end_time))
+							if hit_time < duration:
+								sweep.end = sweep.start.lerp(sweep.end, hit_time / duration)
+								sweep.end_time = hit_time
+							break
 	var encounters: Array[Dictionary] = []
 	for squadron in carrier_squadrons:
 		if squadron.team != "player" or squadron.dogfight != null:
@@ -457,11 +544,15 @@ func _advance_carrier_squadrons(dt: float, previous_targets: Dictionary) -> void
 				continue
 			var encounter_time := INF
 			var encounter_center := Vector2.ZERO
-			var overlap: float = minf(squadron.orbit_end_time, other.orbit_end_time)
 			for sweep in squadron.orbit_sweeps:
 				for other_sweep in other.orbit_sweeps:
-					var end_a: Vector2 = sweep.start.lerp(sweep.end, overlap / squadron.orbit_end_time)
-					var end_b: Vector2 = other_sweep.start.lerp(other_sweep.end, overlap / other.orbit_end_time)
+					var duration_a: float = float(sweep.get("end_time", squadron.orbit_end_time))
+					var duration_b: float = float(other_sweep.get("end_time", other.orbit_end_time))
+					var overlap: float = minf(duration_a, duration_b)
+					if overlap <= 0.0:
+						continue
+					var end_a: Vector2 = sweep.start.lerp(sweep.end, overlap / duration_a)
+					var end_b: Vector2 = other_sweep.start.lerp(other_sweep.end, overlap / duration_b)
 					var relative: Vector2 = sweep.start - other_sweep.start
 					var movement: Vector2 = (end_a - sweep.start) - (end_b - other_sweep.start)
 					var c: float = relative.length_squared() - pow(float(config.carrier.dogfight_range_km), 2)
@@ -488,9 +579,17 @@ func _advance_carrier_squadrons(dt: float, previous_targets: Dictionary) -> void
 		if a.dogfight != null or b.dogfight != null:
 			continue
 		for squadron in [a, b]:
-			var fraction: float = encounter.time / squadron.orbit_end_time
+			for member in squadron.members:
+				if member.has("defense_hit_time") and float(member.defense_hit_time) > encounter.time:
+					if not member.has("decoy_collision_time") or float(member.decoy_collision_time) > encounter.time:
+						member.alive = true
+						member.node.visible = true
+					member.erase("defense_hit_time")
 			for sweep in squadron.orbit_sweeps:
-				sweep.end = sweep.start.lerp(sweep.end, fraction)
+				var duration: float = float(sweep.get("end_time", squadron.orbit_end_time))
+				if duration > encounter.time:
+					sweep.end = sweep.start.lerp(sweep.end, encounter.time / duration)
+					sweep.end_time = encounter.time
 			squadron.rewind_orbit_to(encounter.time)
 			squadron.orbit_end_time = encounter.time
 		_start_dogfight(a, b, encounter.center)
@@ -499,12 +598,15 @@ func _advance_carrier_squadrons(dt: float, previous_targets: Dictionary) -> void
 			continue
 		for sweep in squadron.orbit_sweeps:
 			var member: Dictionary = sweep.member
-			if not member.alive:
+			var sweep_end: float = float(sweep.get("end_time", squadron.orbit_end_time))
+			if sweep_end <= 0.0 and member.has("defense_hit_time"):
+				continue
+			if not member.alive and not sweep.has("end_time"):
 				continue
 			if squadron.team == "enemy":
 				var player_id: int = controller.ship.get_instance_id()
 				var old_world: Vector2 = controller.ship.get_parent().to_global(previous_targets.get(player_id, controller.ship.position))
-				if not member.hit_targets.has(player_id) and segment_distance(sweep.start - old_world, sweep.end - old_world.lerp(player, squadron.orbit_end_time / dt), Vector2.ZERO) <= float(config.carrier.radius_km) + float(config.player.hit_radius_km):
+				if not member.hit_targets.has(player_id) and segment_distance(sweep.start - old_world, sweep.end - old_world.lerp(player, sweep_end / dt), Vector2.ZERO) <= float(config.carrier.radius_km) + float(config.player.hit_radius_km):
 					member.hit_targets[player_id] = true
 					damage_player(float(config.carrier.damage))
 					if dead:
@@ -516,11 +618,11 @@ func _advance_carrier_squadrons(dt: float, previous_targets: Dictionary) -> void
 					continue
 				var enemy_end: Vector2 = enemy.node.global_position
 				var enemy_start: Vector2 = enemy.node.get_parent().to_global(previous_targets.get(enemy.node.get_instance_id(), enemy.node.position))
-				var end_at_orbit: Vector2 = enemy_start.lerp(enemy_end, squadron.orbit_end_time / dt)
+				var end_at_orbit: Vector2 = enemy_start.lerp(enemy_end, sweep_end / dt)
 				if segment_distance(sweep.start - enemy_start, sweep.end - end_at_orbit, Vector2.ZERO) <= float(config.carrier.radius_km) + float(enemy.config.radius_km):
 					member.hit_targets[enemy_id] = true
 					damage_target(enemy.node, float(config.carrier.damage))
-		if squadron.dogfight == null and squadron.finished(player if squadron.team == "player" else squadron.mothership.global_position):
+		if not squadron.members.any(func(member): return member.alive) or (squadron.dogfight == null and squadron.finished(player if squadron.team == "player" else squadron.mothership.global_position)):
 			_clear_squadron(squadron)
 
 func _clear_mothership_squadrons(mothership: Node2D) -> void:
@@ -553,7 +655,7 @@ func _launch_enemy_carrier(mothership: Node2D) -> bool:
 	for direction in [-1.0, 1.0]:
 		var squadron = CarrierSquadron.instantiate()
 		add_child(squadron)
-		squadron.launch(mothership.global_position, center, direction, config.carrier, "enemy", mothership)
+		squadron.launch(mothership.global_position, center, direction, config.carrier, "enemy", mothership, mothership.get_parent().global_transform.basis_xform(mothership.state.velocity), float(body.mu))
 		carrier_squadrons.append(squadron)
 	return true
 
@@ -580,21 +682,29 @@ func _advance_dogfights(real_delta: float) -> void:
 				b.dogfight = null
 			dogfights.erase(fight)
 			continue
+		if not a.members.any(func(member): return member.alive and not is_instance_valid(member.get("decoy"))) or not b.members.any(func(member): return member.alive and not is_instance_valid(member.get("decoy"))):
+			a.dogfight = null
+			b.dogfight = null
+			dogfights.erase(fight)
+			continue
 		fight.elapsed += real_delta
 		if fight.elapsed < float(config.carrier.dogfight_duration_real_s):
 			var phase: float = fight.phase + fight.elapsed * TAU / float(config.carrier.dogfight_duration_real_s)
 			for squadron in [a, b]:
 				for i in range(squadron.members.size()):
 					var member: Dictionary = squadron.members[i]
-					if member.alive:
+					if member.alive and not is_instance_valid(member.get("decoy")):
+						if not member.has("defense_dogfight_start"):
+							member.defense_dogfight_start = member.current
 						var angle: float = phase + TAU * i / squadron.members.size() + (PI if squadron == b else 0.0)
 						var offset := Vector2(cos(angle), sin(angle) * float(fight.aspect)) * (8.0 + i * 2.0)
 						member.node.global_position = fight.center + offset
+						member.current = member.node.global_position
 						member.node.get_node("Body").global_rotation = Vector2(-sin(angle), cos(angle) * float(fight.aspect)).angle()
 			continue
 		for squadron in [a, b]:
 			if randf() < float(config.carrier.dogfight_loss_probability):
-				var alive: Array = squadron.members.filter(func(member): return member.alive)
+				var alive: Array = squadron.members.filter(func(member): return member.alive and not is_instance_valid(member.get("decoy")))
 				alive.shuffle()
 				var count := mini(alive.size(), randi_range(int(config.carrier.dogfight_loss_min), int(config.carrier.dogfight_loss_max)))
 				for i in range(count):
@@ -658,7 +768,7 @@ func _on_bomb_impact(world_position: Vector2, radius: float, damage: float, sour
 func _sync_lock_audio() -> void:
 	var locked := false
 	for enemy in enemies:
-		if bool(enemy.get("locked", false)):
+		if enemy.get("weapon", "missile") == "missile" and bool(enemy.get("locked", false)):
 			locked = true
 			break
 	_set_lock_audio(locked)
@@ -702,7 +812,7 @@ func _update_lock_warning() -> void:
 	var locked := false
 	if not dead and not controller.manually_paused and not controller.is_orbit_editing() and not get_tree().paused and controller.motion_mode != "COLLISION":
 		for enemy in enemies:
-			if bool(enemy.get("locked", false)):
+			if enemy.get("weapon", "missile") == "missile" and bool(enemy.get("locked", false)):
 				locked = true
 				break
 	var edges: Control = hud.get_node("LockEdges")
@@ -970,6 +1080,9 @@ func fire_slot(index: int) -> void:
 					var audio := get_node_or_null("/root/AudioManager")
 					if audio:
 						audio.play_carrier_launch()
+			"satellite_deployer":
+				if not player_deployer_used and _deploy_decoy(controller.ship, controller.velocity, controller.focus_index, "player"):
+					player_deployer_used = true
 			"point_defense":
 				slot.active = true
 				slot.remaining = float(config.point_defense.duration_sim_s)
@@ -1068,6 +1181,8 @@ func _update_hud() -> void:
 			reason = "调整中"
 		elif slot.id == "":
 			reason = "未装备"
+		elif slot.id == "satellite_deployer" and player_deployer_used:
+			reason = "本关已使用"
 		elif float(slot.cooldown) > 0.0:
 			reason = "冷却中"
 		elif not slot.active and slot.id == "missile" and (not is_instance_valid(selected) or not _is_active_target(selected) or controller.ship.position.distance_to(selected.global_position) > float(config.radar.far_radius_km)):

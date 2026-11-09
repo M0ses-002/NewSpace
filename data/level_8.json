@@ -1,0 +1,13 @@
+{
+  "level": 8,
+  "title": "第八关：三舰围攻",
+  "objective": "目标：击毁三艘敌舰",
+  "entities": {"Satellites": 0, "Enemies": 3, "InitialDebris": 0},
+  "enemy_fire_enabled": true,
+  "satellite_defense_enabled": false,
+  "victory": {"type": "all_enemies"},
+  "tutorial": [
+    {"image": "res://data/tutorial_radar.svg", "text": "本关有三艘敌舰：导弹舰、航母舰和卫星布置器舰。注意雷达与来袭提示，调整航线应对不同威胁。"},
+    {"image": "res://data/tutorial_missile.svg", "text": "两支地面空军会参与攻击，无需消灭它们。击毁全部三艘敌舰才能通关；敌舰自然坠毁将导致任务失败。"}
+  ]
+}

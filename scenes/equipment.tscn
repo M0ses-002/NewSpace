@@ -68,7 +68,7 @@ light_energy = 0.7
 
 [node name="Help" type="Label" parent="Margin/Layout"]
 layout_mode = 2
-text = "选择一个装备槽，再选择武器安装。每个槽位可独立配置。"
+text = "选择一个装备槽，再选择装备安装。每个槽位可独立配置。"
 horizontal_alignment = 1
 
 [node name="Slots" type="HBoxContainer" parent="Margin/Layout"]

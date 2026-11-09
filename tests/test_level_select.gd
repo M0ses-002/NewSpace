@@ -34,7 +34,7 @@ func run() -> void:
 	await process_frame
 	var selector = current_scene
 	check(selector.scene_file_path == "res://scenes/level_select.tscn", "继续游戏进入选关界面")
-	for i in range(7):
+	for i in range(8):
 		check(selector.levels.get_child(i).disabled == (i >= 3), "第三关进度下关卡 %d 可用状态" % (i + 1))
 		var file := FileAccess.open("res://data/level_%d.json" % (i + 1), FileAccess.READ)
 		var data = JSON.parse_string(file.get_as_text())
@@ -70,8 +70,8 @@ func run() -> void:
 	await process_frame
 	await process_frame
 	selector = current_scene
-	for i in range(7):
-		check(selector.levels.get_child(i).disabled == (i == 6), "第六关解锁后关卡 %d 可用状态" % (i + 1))
+	for i in range(8):
+		check(selector.levels.get_child(i).disabled == (i >= 6), "第六关解锁后关卡 %d 可用状态" % (i + 1))
 	selector.levels.get_child(5).pressed.emit()
 	await process_frame
 	await process_frame

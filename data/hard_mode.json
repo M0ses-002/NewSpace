@@ -1,0 +1,10 @@
+{
+  "1": {"time_limit_seconds": 35, "max_slots": null, "weapon_limits": {}},
+  "2": {"time_limit_seconds": 35, "max_slots": null, "weapon_limits": {}},
+  "3": {"time_limit_seconds": null, "max_slots": 1, "weapon_limits": {}},
+  "4": {"time_limit_seconds": null, "max_slots": 2, "weapon_limits": {}},
+  "5": {"time_limit_seconds": 35, "max_slots": null, "weapon_limits": {}},
+  "6": {"time_limit_seconds": 35, "max_slots": 2, "weapon_limits": {}},
+  "7": {"time_limit_seconds": null, "max_slots": 3, "weapon_limits": {"missile": 1}},
+  "8": {"time_limit_seconds": null, "max_slots": null, "weapon_limits": {}}
+}
