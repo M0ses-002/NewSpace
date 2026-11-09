@@ -1,0 +1,7 @@
+[gd_scene format=3]
+
+[node name="Missile" type="Node2D"]
+
+[node name="Body" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(6, 0, -4, -2, -3, 0, -4, 2)
+color = Color(1, 0.7, 0.28, 1)

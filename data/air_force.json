@@ -1,0 +1,9 @@
+{
+  "duration_sim_s": 240.0,
+  "member_spacing_km": 6.0,
+  "member_radius_km": 2.0,
+  "member_health": 50.0,
+  "trigger_distance_km": 45.0,
+  "collision_damage": 12.0,
+  "trail_points": 16
+}

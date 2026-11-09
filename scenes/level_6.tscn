@@ -1,0 +1,33 @@
+[gd_scene format=3 uid="uid://gljkl7otm42e"]
+
+[ext_resource type="Script" uid="uid://edbss3uia1bi" path="res://scripts/level_controller.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/level_base.tscn" id="2"]
+[ext_resource type="PackedScene" uid="uid://cxqljve2cttjs" path="res://scenes/air_force.tscn" id="3"]
+[ext_resource type="PackedScene" path="res://scenes/enemy.tscn" id="3_ku6r7"]
+
+[node name="Level6" type="Node" unique_id=910176750]
+script = ExtResource("1")
+config_path = "res://data/level_6.json"
+
+[node name="Sandbox" parent="." unique_id=1423001888 instance=ExtResource("2")]
+
+[node name="Enemy1" parent="Sandbox/World/Combat/Enemies" index="0" unique_id=1041326711 instance=ExtResource("3_ku6r7")]
+position = Vector2(-220, 50)
+config_path = "res://data/enemy_default.json"
+
+[node name="AirForces" type="Node2D" parent="Sandbox/World" index="12" unique_id=2010874072]
+
+[node name="AirForce1" parent="Sandbox/World/AirForces" unique_id=432241931 instance=ExtResource("3")]
+planet_path = NodePath("../../Planet")
+
+[node name="Start" parent="Sandbox/World/AirForces/AirForce1" index="0" unique_id=907933116]
+position = Vector2(46, -22)
+
+[node name="Apex" parent="Sandbox/World/AirForces/AirForce1" index="1" unique_id=455416263]
+position = Vector2(4, -256)
+
+[node name="End" parent="Sandbox/World/AirForces/AirForce1" index="2" unique_id=2007174267]
+position = Vector2(-48, -19)
+
+[editable path="Sandbox"]
+[editable path="Sandbox/World/AirForces/AirForce1"]

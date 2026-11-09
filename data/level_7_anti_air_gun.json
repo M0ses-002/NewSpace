@@ -1,0 +1,10 @@
+{
+  "health": 40.0,
+  "radius_km": 4.0,
+  "range_km": 120.0,
+  "shots_per_sim_s": 4.0,
+  "bullet_speed_km_s": 35.0,
+  "bullet_lifetime_sim_s": 6.0,
+  "bullet_radius_km": 0.7,
+  "bullet_damage": 2.0
+}

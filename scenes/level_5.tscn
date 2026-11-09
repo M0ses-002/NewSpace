@@ -1,0 +1,18 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/level_controller.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/level_base.tscn" id="2"]
+[ext_resource type="PackedScene" path="res://scenes/planet.tscn" id="3"]
+
+[node name="Level5" type="Node"]
+script = ExtResource("1")
+config_path = "res://data/level_5.json"
+
+[node name="Sandbox" parent="." instance=ExtResource("2")]
+initial_zoom = 0.55
+
+[node name="PlanetB" parent="Sandbox/World" instance=ExtResource("3")]
+position = Vector2(860, 0)
+body_index = 1
+
+[editable path="Sandbox"]

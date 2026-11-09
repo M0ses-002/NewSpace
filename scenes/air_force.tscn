@@ -1,0 +1,116 @@
+[gd_scene format=3 uid="uid://cxqljve2cttjs"]
+
+[ext_resource type="Script" uid="uid://ci12xp3til23x" path="res://scripts/air_force.gd" id="1"]
+
+[node name="AirForce" type="Node2D" unique_id=438702052]
+script = ExtResource("1")
+
+[node name="Start" type="Marker2D" parent="." unique_id=907933116]
+position = Vector2(-40, -30)
+
+[node name="Apex" type="Marker2D" parent="." unique_id=455416263]
+position = Vector2(0, -90)
+
+[node name="End" type="Marker2D" parent="." unique_id=2007174267]
+position = Vector2(40, -30)
+
+[node name="Members" type="Node2D" parent="." unique_id=1882610523]
+
+[node name="Member1" type="Node2D" parent="Members" unique_id=439178229]
+
+[node name="Trail" type="Line2D" parent="Members/Member1" unique_id=759256060]
+width = 1.4
+default_color = Color(0.45, 0.8, 1, 0.85)
+antialiased = true
+
+[node name="Body" type="Polygon2D" parent="Members/Member1" unique_id=1068720003]
+color = Color(0.9, 0.9, 1, 1)
+polygon = PackedVector2Array(3, 0, -2, 2, -1, 0, -2, -2)
+
+[node name="Member2" type="Node2D" parent="Members" unique_id=815117640]
+
+[node name="Trail" type="Line2D" parent="Members/Member2" unique_id=916196852]
+width = 1.4
+default_color = Color(0.45, 0.8, 1, 0.85)
+antialiased = true
+
+[node name="Body" type="Polygon2D" parent="Members/Member2" unique_id=1269816594]
+color = Color(0.9, 0.9, 1, 1)
+polygon = PackedVector2Array(3, 0, -2, 2, -1, 0, -2, -2)
+
+[node name="Member3" type="Node2D" parent="Members" unique_id=1125883729]
+
+[node name="Trail" type="Line2D" parent="Members/Member3" unique_id=415252946]
+width = 1.4
+default_color = Color(0.45, 0.8, 1, 0.85)
+antialiased = true
+
+[node name="Body" type="Polygon2D" parent="Members/Member3" unique_id=1702762053]
+color = Color(0.9, 0.9, 1, 1)
+polygon = PackedVector2Array(3, 0, -2, 2, -1, 0, -2, -2)
+
+[node name="Member4" type="Node2D" parent="Members" unique_id=75146423]
+
+[node name="Trail" type="Line2D" parent="Members/Member4" unique_id=336617253]
+width = 1.4
+default_color = Color(0.45, 0.8, 1, 0.85)
+antialiased = true
+
+[node name="Body" type="Polygon2D" parent="Members/Member4" unique_id=1467927821]
+color = Color(0.9, 0.9, 1, 1)
+polygon = PackedVector2Array(3, 0, -2, 2, -1, 0, -2, -2)
+
+[node name="Member5" type="Node2D" parent="Members" unique_id=1759246949]
+
+[node name="Trail" type="Line2D" parent="Members/Member5" unique_id=1578297470]
+width = 1.4
+default_color = Color(0.45, 0.8, 1, 0.85)
+antialiased = true
+
+[node name="Body" type="Polygon2D" parent="Members/Member5" unique_id=2039211391]
+color = Color(0.9, 0.9, 1, 1)
+polygon = PackedVector2Array(3, 0, -2, 2, -1, 0, -2, -2)
+
+[node name="Member6" type="Node2D" parent="Members" unique_id=286712270]
+
+[node name="Trail" type="Line2D" parent="Members/Member6" unique_id=933895112]
+width = 1.4
+default_color = Color(0.45, 0.8, 1, 0.85)
+antialiased = true
+
+[node name="Body" type="Polygon2D" parent="Members/Member6" unique_id=1315586588]
+color = Color(0.9, 0.9, 1, 1)
+polygon = PackedVector2Array(3, 0, -2, 2, -1, 0, -2, -2)
+
+[node name="Member7" type="Node2D" parent="Members" unique_id=168961370]
+
+[node name="Trail" type="Line2D" parent="Members/Member7" unique_id=1759240417]
+width = 1.4
+default_color = Color(0.45, 0.8, 1, 0.85)
+antialiased = true
+
+[node name="Body" type="Polygon2D" parent="Members/Member7" unique_id=1019808571]
+color = Color(0.9, 0.9, 1, 1)
+polygon = PackedVector2Array(3, 0, -2, 2, -1, 0, -2, -2)
+
+[node name="Member8" type="Node2D" parent="Members" unique_id=846168135]
+
+[node name="Trail" type="Line2D" parent="Members/Member8" unique_id=171085204]
+width = 1.4
+default_color = Color(0.45, 0.8, 1, 0.85)
+antialiased = true
+
+[node name="Body" type="Polygon2D" parent="Members/Member8" unique_id=1068275508]
+color = Color(0.9, 0.9, 1, 1)
+polygon = PackedVector2Array(3, 0, -2, 2, -1, 0, -2, -2)
+
+[node name="Member9" type="Node2D" parent="Members" unique_id=509347415]
+
+[node name="Trail" type="Line2D" parent="Members/Member9" unique_id=1365715562]
+width = 1.4
+default_color = Color(0.45, 0.8, 1, 0.85)
+antialiased = true
+
+[node name="Body" type="Polygon2D" parent="Members/Member9" unique_id=1778078940]
+color = Color(0.9, 0.9, 1, 1)
+polygon = PackedVector2Array(3, 0, -2, 2, -1, 0, -2, -2)

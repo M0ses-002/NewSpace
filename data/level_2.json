@@ -1,0 +1,13 @@
+{
+  "level": 2,
+  "title": "第二关：卫星交互",
+  "objective": "目标：夺控卫星并点击使用",
+  "entities": {"Satellites": 1, "Enemies": 0, "InitialDebris": 0},
+  "enemy_fire_enabled": false,
+  "satellite_defense_enabled": false,
+  "victory": {"type": "satellite"},
+  "tutorial": [
+	{"image": "res://data/teach/QQ20261107-230842.png", "text": "当飞船进入卫星周围的圆形范围后即夺取该卫星的控制权，点击使用卫星按钮即可通过"},
+	{"image": "res://data/teach/QQ20261107-230842.png", "text": "本关目标为控制卫星"}
+  ]
+}

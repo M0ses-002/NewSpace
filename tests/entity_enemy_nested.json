@@ -1,0 +1,1 @@
+{"type":"orbital_enemy_nested","properties":{"flight":{"health":45,"radius_km":12,"acceleration_km_s2":0.005,"max_speed_km_s":0.8,"color":"#ff6666"}}}

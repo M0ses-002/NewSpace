@@ -1,0 +1,264 @@
+[gd_scene format=3 uid="uid://bsh0eb8bxsoau"]
+
+[node name="HUD" type="CanvasLayer" unique_id=707664860]
+
+[node name="Layout" type="Control" parent="." unique_id=1363072552]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Header" type="VBoxContainer" parent="Layout" unique_id=823886846]
+layout_mode = 0
+offset_left = 30.0
+offset_top = 24.0
+offset_right = 650.0
+offset_bottom = 100.0
+mouse_filter = 2
+
+[node name="Title" type="Label" parent="Layout/Header" unique_id=324298576]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.95, 1, 1)
+theme_override_font_sizes/font_size = 26
+text = "轨道实验室 / ORBIT LAB"
+
+[node name="Status" type="Label" parent="Layout/Header" unique_id=1462432248]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.35, 0.9, 0.79, 1)
+theme_override_font_sizes/font_size = 15
+text = "运行中"
+
+[node name="Units" type="Label" parent="Layout/Header" unique_id=488287862]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.71, 0.8, 1)
+theme_override_font_sizes/font_size = 13
+text = "1 世界单位 = 1 km"
+
+[node name="Telemetry" type="Label" parent="Layout" unique_id=431774626]
+layout_mode = 0
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -250.0
+offset_top = 120.0
+offset_right = -24.0
+offset_bottom = 450.0
+grow_horizontal = 0
+theme_override_colors/font_color = Color(0.65, 0.8, 0.88, 1)
+theme_override_font_sizes/font_size = 16
+text = "轨道参数"
+
+[node name="Feedback" type="Label" parent="Layout" unique_id=334827191]
+layout_mode = 0
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 30.0
+offset_top = -125.0
+offset_right = 640.0
+offset_bottom = -22.0
+grow_vertical = 0
+theme_override_colors/font_color = Color(0.55, 0.71, 0.8, 1)
+theme_override_font_sizes/font_size = 15
+text = "拖动端点规划轨道"
+
+[node name="SpeedBackground" type="ColorRect" parent="Layout" unique_id=124268078]
+layout_mode = 0
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -358.0
+offset_top = 447.0
+offset_right = -18.0
+offset_bottom = 698.0
+grow_horizontal = 0
+mouse_filter = 2
+color = Color(0.025, 0.055, 0.085, 0.88)
+
+[node name="SpeedControl" type="VBoxContainer" parent="Layout" unique_id=1120524061]
+layout_mode = 0
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -350.0
+offset_top = 455.0
+offset_right = -26.0
+offset_bottom = 690.0
+grow_horizontal = 0
+theme_override_constants/separation = 4
+
+[node name="Title" type="Label" parent="Layout/SpeedControl" unique_id=992577249]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.95, 1, 1)
+theme_override_font_sizes/font_size = 18
+text = "速度"
+
+[node name="Turnaround" type="Button" parent="Layout/SpeedControl"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+text = "调头"
+
+[node name="SpeedValue" type="Label" parent="Layout/SpeedControl" unique_id=629811745]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "0.00 m/s · ×1.000"
+
+[node name="SpeedSlider" type="HSlider" parent="Layout/SpeedControl" unique_id=467367572]
+custom_minimum_size = Vector2(280, 28)
+layout_mode = 2
+step = 0.0
+scrollable = false
+
+[node name="CircularMarker" type="Control" parent="Layout/SpeedControl/SpeedSlider" unique_id=537547283]
+modulate = Color(0.35, 0.9, 0.79, 1)
+anchors_preset = 0
+offset_left = 146.0
+offset_top = 14.0
+offset_right = 146.0
+offset_bottom = 14.0
+mouse_filter = 2
+
+[node name="Tick" type="ColorRect" parent="Layout/SpeedControl/SpeedSlider/CircularMarker" unique_id=1066161484]
+layout_mode = 0
+offset_left = -1.0
+offset_top = -10.0
+offset_right = 1.0
+offset_bottom = 10.0
+mouse_filter = 2
+color = Color(1, 1, 1, 0.9)
+
+[node name="Diamond" type="Polygon2D" parent="Layout/SpeedControl/SpeedSlider/CircularMarker" unique_id=2032164081]
+position = Vector2(0, 12)
+polygon = PackedVector2Array(0, -4, 4, 0, 0, 4, -4, 0)
+
+[node name="FreeMaxControl" type="VBoxContainer" parent="Layout/SpeedControl" unique_id=755692193]
+visible = false
+layout_mode = 2
+
+[node name="Title" type="Label" parent="Layout/SpeedControl/FreeMaxControl" unique_id=515461982]
+layout_mode = 2
+text = "自由飞行最大速度"
+
+[node name="MaxSpeedSlider" type="HSlider" parent="Layout/SpeedControl/FreeMaxControl" unique_id=206784360]
+custom_minimum_size = Vector2(280, 28)
+layout_mode = 2
+min_value = 0.01
+max_value = 2.0
+step = 0.001
+value = 0.01
+scrollable = false
+
+[node name="Value" type="Label" parent="Layout/SpeedControl/FreeMaxControl" unique_id=191210612]
+layout_mode = 2
+text = "1000 m/s"
+
+[node name="CircularSpeed" type="Label" parent="Layout/SpeedControl" unique_id=2094522052]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.35, 0.9, 0.79, 1)
+theme_override_font_sizes/font_size = 13
+text = "◆ 圆速"
+
+[node name="SpeedLimits" type="Label" parent="Layout/SpeedControl" unique_id=833398044]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.71, 0.8, 1)
+theme_override_font_sizes/font_size = 13
+text = "当前方向合法范围"
+
+[node name="Hint" type="Label" parent="Layout/SpeedControl" unique_id=1562820598]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.71, 0.8, 1)
+theme_override_font_sizes/font_size = 13
+text = "方向键 1 m/s · Esc 取消"
+
+[node name="AngleBackground" type="ColorRect" parent="Layout" unique_id=1881506537]
+layout_mode = 0
+offset_left = 22.0
+offset_top = 444.0
+offset_right = 364.0
+offset_bottom = 676.0
+mouse_filter = 2
+color = Color(0.025, 0.055, 0.085, 0.88)
+
+[node name="AngleControl" type="VBoxContainer" parent="Layout" unique_id=288062413]
+layout_mode = 0
+offset_left = 30.0
+offset_top = 452.0
+offset_right = 356.0
+offset_bottom = 668.0
+theme_override_constants/separation = 4
+
+[node name="Title" type="Label" parent="Layout/AngleControl" unique_id=1777852487]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.85, 0.95, 1, 1)
+theme_override_font_sizes/font_size = 18
+text = "轨道朝向"
+
+[node name="AngleValue" type="Label" parent="Layout/AngleControl" unique_id=1689250261]
+layout_mode = 2
+theme_override_font_sizes/font_size = 16
+text = "+0.0° · 0.00 m/s"
+
+[node name="AngleSlider" type="HSlider" parent="Layout/AngleControl" unique_id=350319179]
+custom_minimum_size = Vector2(280, 28)
+layout_mode = 2
+step = 0.0
+scrollable = false
+
+[node name="BaseMarker" type="Control" parent="Layout/AngleControl/AngleSlider" unique_id=246755370]
+modulate = Color(1, 1, 1, 0.65)
+anchors_preset = 0
+offset_left = 140.0
+offset_top = 14.0
+offset_right = 140.0
+offset_bottom = 14.0
+mouse_filter = 2
+
+[node name="Tick" type="ColorRect" parent="Layout/AngleControl/AngleSlider/BaseMarker" unique_id=491687350]
+layout_mode = 0
+offset_left = -1.0
+offset_top = -10.0
+offset_right = 1.0
+offset_bottom = 10.0
+mouse_filter = 2
+color = Color(1, 1, 1, 0.9)
+
+[node name="AngleLimits" type="Label" parent="Layout/AngleControl" unique_id=1734031771]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.71, 0.8, 1)
+theme_override_font_sizes/font_size = 13
+text = "可行偏角"
+
+[node name="AngleReadout" type="Label" parent="Layout/AngleControl" unique_id=982759100]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.65, 0.8, 0.88, 1)
+theme_override_font_sizes/font_size = 13
+text = "Δv 0.0 m/s · e 0.0000"
+
+[node name="AngleHint" type="Label" parent="Layout/AngleControl" unique_id=1740461145]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(0.55, 0.71, 0.8, 1)
+theme_override_font_sizes/font_size = 13
+text = "方向键 0.25° · Home/End 边界 · Esc 取消"
+
+[node name="Controls" type="HBoxContainer" parent="Layout" unique_id=1327254968]
+layout_mode = 0
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -250.0
+offset_top = -70.0
+offset_right = -30.0
+offset_bottom = -30.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_constants/separation = 12
+
+[node name="Pause" type="Button" parent="Layout/Controls" unique_id=147100033]
+custom_minimum_size = Vector2(100, 40)
+layout_mode = 2
+text = "暂停 / 继续"

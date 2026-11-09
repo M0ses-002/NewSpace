@@ -1,0 +1,62 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://scripts/main_menu.gd" id="1"]
+
+[node name="Menu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1")
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="PanelContainer" parent="Center"]
+custom_minimum_size = Vector2(420, 400)
+layout_mode = 2
+
+[node name="Layout" type="VBoxContainer" parent="Center/Panel"]
+layout_mode = 2
+theme_override_constants/separation = 18
+alignment = 1
+
+[node name="Title" type="Label" parent="Center/Panel/Layout"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 36
+text = "轨道行动"
+horizontal_alignment = 1
+
+[node name="New" type="Button" parent="Center/Panel/Layout"]
+layout_mode = 2
+text = "新游戏"
+
+[node name="Continue" type="Button" parent="Center/Panel/Layout"]
+layout_mode = 2
+text = "继续游戏"
+
+[node name="Equipment" type="Button" parent="Center/Panel/Layout"]
+layout_mode = 2
+text = "飞船改造"
+
+[node name="Settings" type="Button" parent="Center/Panel/Layout"]
+layout_mode = 2
+text = "设置"
+
+[node name="Quit" type="Button" parent="Center/Panel/Layout"]
+layout_mode = 2
+text = "退出"
+
+[node name="Confirm" type="ConfirmationDialog" parent="."]
+title = "开始新游戏"
+dialog_text = "新游戏将覆盖已有的关卡进度，是否继续？"
+
+[node name="Notice" type="AcceptDialog" parent="."]
+title = "提示"

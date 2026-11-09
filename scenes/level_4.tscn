@@ -1,0 +1,32 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://scripts/level_controller.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/level_base.tscn" id="2"]
+[ext_resource type="PackedScene" path="res://scenes/satellite.tscn" id="3"]
+[ext_resource type="PackedScene" path="res://scenes/capture_range.tscn" id="4"]
+[ext_resource type="PackedScene" path="res://scenes/enemy.tscn" id="5"]
+
+[node name="Level4" type="Node"]
+script = ExtResource("1")
+config_path = "res://data/level_4.json"
+
+[node name="Sandbox" parent="." instance=ExtResource("2")]
+
+[node name="Satellite1" parent="Sandbox/World/Combat/Satellites" instance=ExtResource("3")]
+position = Vector2(190, 0)
+config_path = "res://data/satellite_default.json"
+capture_range_path = NodePath("../../SatelliteCaptureRanges/CaptureRange1")
+
+[node name="Satellite2" parent="Sandbox/World/Combat/Satellites" instance=ExtResource("3")]
+position = Vector2(-95, 164.545)
+config_path = "res://data/satellite_default.json"
+capture_range_path = NodePath("../../SatelliteCaptureRanges/CaptureRange2")
+
+[node name="CaptureRange1" parent="Sandbox/World/Combat/SatelliteCaptureRanges" instance=ExtResource("4")]
+[node name="CaptureRange2" parent="Sandbox/World/Combat/SatelliteCaptureRanges" instance=ExtResource("4")]
+
+[node name="Enemy1" parent="Sandbox/World/Combat/Enemies" instance=ExtResource("5")]
+position = Vector2(-220, 50)
+config_path = "res://data/enemy_default.json"
+
+[editable path="Sandbox"]

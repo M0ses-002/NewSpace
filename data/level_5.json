@@ -1,0 +1,14 @@
+{
+  "level": 5,
+  "title": "第五关：跨越间隙",
+  "objective": "目标：进入第二颗行星的轨道",
+  "entities": {"Satellites": 0, "Enemies": 0, "InitialDebris": 0},
+  "enemy_fire_enabled": false,
+  "satellite_defense_enabled": false,
+  "victory": {"type": "orbit_body", "body_index": 1},
+  "tutorial": [
+	{"image": "res://data/teach/QQ20261107-231138.png", "text": "当调节轨道到一个比较极端的数值时，我们可以飞出行星引力范围。"},
+	{"image": "res://data/teach/QQ20261107-231146.png", "text": "当我们飞出引力范围后，可以使用左键标记地点，飞船会自动向目标点飞行。飞船进入另一颗行星引力范围后会自动入轨"},
+	{"image": "res://data/teach/QQ20261107-231146.png", "text": "本关目标为进入另一颗行星轨道。"}
+  ]
+}

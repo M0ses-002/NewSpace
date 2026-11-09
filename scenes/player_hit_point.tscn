@@ -1,0 +1,7 @@
+[gd_scene format=3]
+
+[node name="PlayerHitPoint" type="Node2D"]
+
+[node name="Point" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(0, -2, 2, 0, 0, 2, -2, 0)
+color = Color(1, 1, 1, 1)

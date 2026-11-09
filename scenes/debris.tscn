@@ -1,0 +1,7 @@
+[gd_scene format=3]
+
+[node name="Debris" type="Node2D"]
+
+[node name="Body" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(-7, -2, -3, -7, 4, -6, 7, 1, 3, 6, -5, 5)
+color = Color(0.64, 0.55, 0.47, 1)

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="320">
+  <rect width="640" height="320" fill="#091827"/>
+  <text x="24" y="34" fill="#ffffff" font-family="sans-serif" font-size="22">双行星总览（示意）：中心相距 860 km</text>
+  <circle cx="150" cy="180" r="130" fill="#45c9a0" fill-opacity="0.05" stroke="#61dfb7" stroke-width="2" stroke-dasharray="7 6"/>
+  <circle cx="150" cy="180" r="53" fill="none" stroke="#4fb7d8" stroke-width="1.5" stroke-opacity="0.6"/>
+  <circle cx="150" cy="180" r="40" fill="#1f6f96" stroke="#9fe3ff" stroke-width="2"/>
+  <text x="150" y="189" fill="#ffffff" font-family="sans-serif" font-size="24" text-anchor="middle">A</text>
+  <text x="150" y="243" fill="#9fd0e0" font-family="sans-serif" font-size="14" text-anchor="middle">半径 50 km / 恒强场 3 km</text>
+  <text x="150" y="294" fill="#61dfb7" font-family="sans-serif" font-size="14" text-anchor="middle">引力区半径 400 km</text>
+  <circle cx="470" cy="180" r="130" fill="#45c9a0" fill-opacity="0.05" stroke="#61dfb7" stroke-width="2" stroke-dasharray="7 6"/>
+  <circle cx="470" cy="180" r="53" fill="none" stroke="#4fb7d8" stroke-width="1.5" stroke-opacity="0.6"/>
+  <circle cx="470" cy="180" r="40" fill="#1f6f96" stroke="#9fe3ff" stroke-width="2"/>
+  <text x="470" y="189" fill="#ffffff" font-family="sans-serif" font-size="24" text-anchor="middle">B</text>
+  <text x="470" y="243" fill="#9fd0e0" font-family="sans-serif" font-size="14" text-anchor="middle">半径 50 km / 恒强场 3 km</text>
+  <text x="470" y="294" fill="#61dfb7" font-family="sans-serif" font-size="14" text-anchor="middle">引力区半径 400 km</text>
+  <path d="M280 180h60" stroke="#f4b656" stroke-width="2" stroke-dasharray="5 4"/>
+  <path d="M280 170v20M340 170v20" stroke="#f4b656" stroke-width="2"/>
+  <text x="310" y="160" fill="#f4b656" font-family="sans-serif" font-size="15" text-anchor="middle">60 km</text>
+  <text x="310" y="204" fill="#f4b656" font-family="sans-serif" font-size="13" text-anchor="middle">无引力间隙</text>
+  <text x="310" y="314" fill="#7fa8bb" font-family="sans-serif" font-size="13" text-anchor="middle">两行星等大，引力区互不重叠</text>
+</svg>

@@ -1,0 +1,10 @@
+[gd_scene format=3 uid="uid://dyxlxrxclsq7a"]
+
+[ext_resource type="Script" uid="uid://edbss3uia1bi" path="res://scripts/level_controller.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/level_base.tscn" id="2"]
+
+[node name="Level1" type="Node" unique_id=308946141]
+script = ExtResource("1")
+config_path = "res://data/level_1.json"
+
+[node name="Sandbox" parent="." unique_id=300982403 instance=ExtResource("2")]

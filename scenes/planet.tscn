@@ -1,0 +1,50 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/planet.gd" id="1_planet"]
+[ext_resource type="Texture2D" path="res://planet_assets/planet_a.png" id="2_sprite"]
+
+[sub_resource type="Gradient" id="Gradient_planet"]
+colors = PackedColorArray(0.24, 0.66, 0.78, 1, 0.035, 0.12, 0.27, 1)
+
+[sub_resource type="GradientTexture2D" id="Texture_planet"]
+gradient = SubResource("Gradient_planet")
+width = 128
+height = 128
+fill = 1
+fill_from = Vector2(0.3, 0.25)
+fill_to = Vector2(0.8, 0.9)
+
+[node name="Planet" type="Node2D"]
+script = ExtResource("1_planet")
+
+[node name="Atmosphere" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(53, 0, 51.19406879, 13.71740939, 45.89934640, 26.5, 37.47665940, 37.47665940, 26.5, 45.89934640, 13.71740939, 51.19406879, 0, 53, -13.71740939, 51.19406879, -26.5, 45.89934640, -37.47665940, 37.47665940, -45.89934640, 26.5, -51.19406879, 13.71740939, -53, 0, -51.19406879, -13.71740939, -45.89934640, -26.5, -37.47665940, -37.47665940, -26.5, -45.89934640, -13.71740939, -51.19406879, 0, -53, 13.71740939, -51.19406879, 26.5, -45.89934640, 37.47665940, -37.47665940, 45.89934640, -26.5, 51.19406879, -13.71740939)
+color = Color(0.2, 0.65, 0.9, 0.15)
+
+[node name="Surface" type="Polygon2D" parent="."]
+visible = false
+polygon = PackedVector2Array(50, 0, 48.29629131, 12.94095226, 43.30127019, 25, 35.35533906, 35.35533906, 25, 43.30127019, 12.94095226, 48.29629131, 0, 50, -12.94095226, 48.29629131, -25, 43.30127019, -35.35533906, 35.35533906, -43.30127019, 25, -48.29629131, 12.94095226, -50, 0, -48.29629131, -12.94095226, -43.30127019, -25, -35.35533906, -35.35533906, -25, -43.30127019, -12.94095226, -48.29629131, 0, -50, 12.94095226, -48.29629131, 25, -43.30127019, 35.35533906, -35.35533906, 43.30127019, -25, 48.29629131, -12.94095226)
+texture = SubResource("Texture_planet")
+texture_offset = Vector2(64, 64)
+
+[node name="Sprite" type="Sprite2D" parent="."]
+texture_filter = 2
+texture = ExtResource("2_sprite")
+hframes = 6
+vframes = 6
+scale = Vector2(0.256, 0.256)
+
+[node name="Focus" type="Line2D" parent="."]
+points = PackedVector2Array(-5, 0, 5, 0, 0, 0, 0, -5, 0, 5)
+width = 1.5
+default_color = Color(0.7, 0.95, 1, 0.8)
+
+[node name="Name" type="Label" parent="."]
+offset_left = -110.0
+offset_top = 60.0
+offset_right = 110.0
+offset_bottom = 85.0
+theme_override_colors/font_color = Color(0.5, 0.7, 0.78, 1)
+theme_override_font_sizes/font_size = 13
+text = "行星半径 50.0 km\n恒强场厚度 3.0 km / 场顶 53.0 km\n引力范围 400.0 km"
+horizontal_alignment = 1

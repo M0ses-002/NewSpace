@@ -1,0 +1,11 @@
+{
+  "radius_km": 50.0,
+  "field_thickness_km": 3.0,
+  "gravity_m_s2": 9.81,
+  "gravity_radius_km": 400.0,
+  "min_periapsis_km": 76.0,
+  "max_semi_major_axis_km": 1000.0,
+  "max_eccentricity": 0.85,
+  "center_x_km": 860.0,
+  "center_y_km": 0.0
+}

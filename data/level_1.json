@@ -1,0 +1,15 @@
+{
+  "level": 1,
+  "title": "第一关：提升高度",
+  "objective": "目标：飞船高度超过行星表面 250 km",
+  "entities": {"Satellites": 0, "Enemies": 0, "InitialDebris": 0},
+  "enemy_fire_enabled": false,
+  "satellite_defense_enabled": false,
+  "victory": {"type": "altitude", "altitude_km": 250.0},
+  "tutorial": [
+	{"image": "res://data/teach/QQ20261107-230738.png", "text": "蓝色轨迹线为飞船的当前轨道，当您不做操作时，飞船将沿蓝色轨迹线行进"},
+	{"image": "res://data/teach/QQ20261107-230757.png", "text": "当您使用左下角的角度调节和右下角的速度调节时都会出现黄色的轨迹预览线，调节后飞船将沿黄色轨迹继续移动"},
+	{"image": "res://data/teach/QQ20261107-230757.png", "text": "一般来讲，速度越快，轨道越高"},
+	{"image": "res://data/teach/QQ20261107-230757.png", "text": "本关目标为到达250km以上的高度。"}
+  ]
+}

@@ -1,0 +1,185 @@
+[gd_scene format=3 uid="uid://b443awhdgcws3"]
+
+[node name="CombatHUD" type="CanvasLayer" unique_id=1092023311]
+layer = 0
+
+[node name="Panel" type="VBoxContainer" parent="." unique_id=1794584019]
+offset_left = 30.0
+offset_top = 235.0
+offset_right = 250.0
+offset_bottom = 355.0
+mouse_filter = 2
+
+[node name="Health" type="Label" parent="Panel" unique_id=434212124]
+layout_mode = 2
+text = "生命值 100"
+
+[node name="Target" type="Label" parent="Panel" unique_id=2139372136]
+layout_mode = 2
+text = "未锁定目标"
+
+[node name="State" type="Label" parent="Panel" unique_id=1317491150]
+layout_mode = 2
+text = "卫星：未控制"
+
+[node name="LockEdges" type="Control" parent="." unique_id=1744448373]
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Top" type="ColorRect" parent="LockEdges" unique_id=1507958445]
+layout_mode = 0
+anchor_right = 1.0
+offset_bottom = 8.0
+mouse_filter = 2
+color = Color(1, 0.05, 0.05, 0.75)
+
+[node name="Bottom" type="ColorRect" parent="LockEdges" unique_id=1684829681]
+layout_mode = 0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -8.0
+mouse_filter = 2
+color = Color(1, 0.05, 0.05, 0.75)
+
+[node name="Left" type="ColorRect" parent="LockEdges" unique_id=2114378777]
+layout_mode = 0
+anchor_bottom = 1.0
+offset_right = 8.0
+mouse_filter = 2
+color = Color(1, 0.05, 0.05, 0.75)
+
+[node name="Right" type="ColorRect" parent="LockEdges" unique_id=910883254]
+layout_mode = 0
+anchor_left = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -8.0
+mouse_filter = 2
+color = Color(1, 0.05, 0.05, 0.75)
+
+[node name="LockWarning" type="Label" parent="." unique_id=362934572]
+visible = false
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -160.0
+offset_top = -130.0
+offset_right = 160.0
+offset_bottom = -98.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_colors/font_color = Color(1, 0.18, 0.18, 1)
+theme_override_font_sizes/font_size = 24
+text = "被锁定"
+horizontal_alignment = 1
+
+[node name="AirRaidWarning" type="Label" parent="."]
+visible = false
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -160.0
+offset_top = -164.0
+offset_right = 160.0
+offset_bottom = -132.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+theme_override_colors/font_color = Color(1, 0.65, 0.15, 1)
+theme_override_font_sizes/font_size = 24
+text = "地面空军来袭"
+horizontal_alignment = 1
+
+[node name="Weapons" type="HBoxContainer" parent="." unique_id=970634329]
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -320.0
+offset_top = -92.0
+offset_right = 320.0
+offset_bottom = -18.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="Slot1" type="VBoxContainer" parent="Weapons" unique_id=112447361]
+layout_mode = 2
+
+[node name="Cooldown" type="Label" parent="Weapons/Slot1" unique_id=2052747025]
+layout_mode = 2
+horizontal_alignment = 1
+
+[node name="Fire" type="Button" parent="Weapons/Slot1" unique_id=255219394]
+custom_minimum_size = Vector2(155, 32)
+layout_mode = 2
+
+[node name="Slot2" type="VBoxContainer" parent="Weapons" unique_id=1486691393]
+layout_mode = 2
+
+[node name="Cooldown" type="Label" parent="Weapons/Slot2" unique_id=311230745]
+layout_mode = 2
+horizontal_alignment = 1
+
+[node name="Fire" type="Button" parent="Weapons/Slot2" unique_id=2001880203]
+custom_minimum_size = Vector2(155, 32)
+layout_mode = 2
+
+[node name="Slot3" type="VBoxContainer" parent="Weapons" unique_id=409845172]
+layout_mode = 2
+
+[node name="Cooldown" type="Label" parent="Weapons/Slot3" unique_id=406829420]
+layout_mode = 2
+horizontal_alignment = 1
+
+[node name="Fire" type="Button" parent="Weapons/Slot3" unique_id=254548395]
+custom_minimum_size = Vector2(155, 32)
+layout_mode = 2
+
+[node name="Slot4" type="VBoxContainer" parent="Weapons" unique_id=2065020317]
+layout_mode = 2
+
+[node name="Cooldown" type="Label" parent="Weapons/Slot4" unique_id=438201805]
+layout_mode = 2
+horizontal_alignment = 1
+
+[node name="Fire" type="Button" parent="Weapons/Slot4" unique_id=1467537155]
+custom_minimum_size = Vector2(155, 32)
+layout_mode = 2
+
+[node name="Death" type="PanelContainer" parent="." unique_id=43664568]
+visible = false
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -140.0
+offset_top = -65.0
+offset_right = 140.0
+offset_bottom = 65.0
+
+[node name="Layout" type="VBoxContainer" parent="Death" unique_id=295469802]
+layout_mode = 2
+alignment = 1
+
+[node name="Message" type="Label" parent="Death/Layout" unique_id=2102352961]
+layout_mode = 2
+text = "飞船损毁"
+horizontal_alignment = 1
+
+[node name="Restart" type="Button" parent="Death/Layout" unique_id=898617119]
+layout_mode = 2
+text = "重新开始关卡"

@@ -1,0 +1,23 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/entity_host.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/radar.tscn" id="2"]
+
+[node name="Enemy" type="Node2D"]
+script = ExtResource("1")
+radar_path = NodePath("Radar")
+
+[node name="Radar" parent="." instance=ExtResource("2")]
+visible = false
+
+[node name="Body" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(10, 0, -7, -6, -4, 0, -7, 6)
+color = Color(1, 0.4, 0.4, 1)
+
+[node name="Health" type="Label" parent="."]
+offset_left = -15.0
+offset_top = -23.0
+offset_right = 38.0
+offset_bottom = -4.0
+theme_override_font_sizes/font_size = 11
+text = "100"

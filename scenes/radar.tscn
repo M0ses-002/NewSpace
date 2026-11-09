@@ -1,0 +1,17 @@
+[gd_scene format=3]
+
+[node name="Radar" type="Node2D"]
+
+[node name="NearVisibility" type="Polygon2D" parent="."]
+color = Color(0.2, 0.55, 0.65, 0.1)
+
+[node name="NearBoundary" type="Line2D" parent="."]
+width = 0.8
+default_color = Color(0.27, 0.55, 0.65, 0.5)
+
+[node name="SectorBoundary" type="Line2D" parent="."]
+width = 1.0
+default_color = Color(0.3, 0.75, 0.8, 0.7)
+
+[node name="Visibility" type="Polygon2D" parent="."]
+color = Color(0.2, 0.55, 0.65, 0.12)

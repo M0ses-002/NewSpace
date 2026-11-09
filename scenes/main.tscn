@@ -1,0 +1,136 @@
+[gd_scene load_steps=15 format=3]
+
+[ext_resource type="Script" path="res://scripts/orbit_sandbox.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/planet.tscn" id="2"]
+[ext_resource type="PackedScene" path="res://scenes/ship.tscn" id="3"]
+[ext_resource type="PackedScene" path="res://scenes/orbit_handle.tscn" id="4"]
+[ext_resource type="PackedScene" path="res://scenes/free_flight.tscn" id="5"]
+[ext_resource type="PackedScene" path="res://scenes/combat.tscn" id="6"]
+[ext_resource type="PackedScene" path="res://scenes/satellite.tscn" id="7"]
+[ext_resource type="PackedScene" path="res://scenes/enemy.tscn" id="8"]
+[ext_resource type="PackedScene" path="res://scenes/radar.tscn" id="9"]
+[ext_resource type="PackedScene" path="res://scenes/combat_hud.tscn" id="10"]
+[ext_resource type="PackedScene" path="res://scenes/debris.tscn" id="11"]
+[ext_resource type="PackedScene" path="res://scenes/orbit_hud.tscn" id="12"]
+[ext_resource type="PackedScene" path="res://scenes/capture_range.tscn" id="13"]
+
+[ext_resource type="PackedScene" path="res://scenes/space_backdrop.tscn" id="14"]
+
+[node name="OrbitSandbox" type="Node2D"]
+script = ExtResource("1")
+
+[node name="SpaceBackdrop" parent="." instance=ExtResource("14")]
+
+[node name="World" type="Node2D" parent="."]
+
+[node name="GravityBoundary" type="Line2D" parent="World"]
+width = 1.5
+default_color = Color(0.45, 0.8, 0.65, 0.55)
+antialiased = true
+
+[node name="FreeFlight" parent="World" instance=ExtResource("5")]
+
+[node name="Axes" type="Line2D" parent="World"]
+width = 1.0
+default_color = Color(0.3, 0.6, 0.7, 0.13)
+antialiased = true
+
+[node name="CurrentOrbit" type="Line2D" parent="World"]
+width = 1.8
+default_color = Color(0.25, 0.65, 0.88, 0.85)
+antialiased = true
+
+[node name="PreviewOrbit" type="Line2D" parent="World"]
+visible = false
+width = 2.2
+default_color = Color(1, 0.7, 0.27, 1)
+antialiased = true
+
+[node name="Planet" parent="World" instance=ExtResource("2")]
+
+[node name="Velocity" type="Line2D" parent="World"]
+visible = false
+width = 2.0
+default_color = Color(0.9, 0.95, 1, 0.8)
+antialiased = true
+
+[node name="NewVelocity" type="Line2D" parent="World"]
+visible = false
+width = 2.0
+default_color = Color(1, 0.6, 0.2, 1)
+antialiased = true
+
+[node name="Anchor" type="Node2D" parent="World"]
+visible = false
+
+[node name="Cross" type="Line2D" parent="World/Anchor"]
+points = PackedVector2Array(-13, -13, 13, 13, 0, 0, -13, 13, 13, -13)
+width = 1.5
+default_color = Color(1, 0.74, 0.3, 0.7)
+
+[node name="Ship" parent="World" instance=ExtResource("3")]
+position = Vector2(210.62, 115.06)
+
+[node name="Camera2D" type="Camera2D" parent="World/Ship"]
+ignore_rotation = true
+
+[node name="Combat" parent="World" instance=ExtResource("6")]
+
+[node name="PlayerRadar" parent="World/Combat" instance=ExtResource("9")]
+
+[node name="Satellites" type="Node2D" parent="World/Combat"]
+
+[node name="Satellite1" parent="World/Combat/Satellites" instance=ExtResource("7")]
+position = Vector2(190, 0)
+config_path = "res://data/satellite_default.json"
+capture_range_path = NodePath("../../SatelliteCaptureRanges/CaptureRange1")
+
+[node name="Satellite2" parent="World/Combat/Satellites" instance=ExtResource("7")]
+position = Vector2(-95, 164.545)
+config_path = "res://data/satellite_default.json"
+capture_range_path = NodePath("../../SatelliteCaptureRanges/CaptureRange2")
+
+[node name="Satellite3" parent="World/Combat/Satellites" instance=ExtResource("7")]
+position = Vector2(-95, -164.545)
+config_path = "res://data/satellite_default.json"
+capture_range_path = NodePath("../../SatelliteCaptureRanges/CaptureRange3")
+
+[node name="SatelliteCaptureRanges" type="Node2D" parent="World/Combat"]
+
+[node name="CaptureRange1" parent="World/Combat/SatelliteCaptureRanges" instance=ExtResource("13")]
+[node name="CaptureRange2" parent="World/Combat/SatelliteCaptureRanges" instance=ExtResource("13")]
+[node name="CaptureRange3" parent="World/Combat/SatelliteCaptureRanges" instance=ExtResource("13")]
+
+[node name="Enemies" type="Node2D" parent="World/Combat"]
+[node name="Enemy1" parent="World/Combat/Enemies" instance=ExtResource("8")]
+position = Vector2(-220, 50)
+config_path = "res://data/enemy_default.json"
+
+[node name="InitialDebris" type="Node2D" parent="World/Combat"]
+
+[node name="Debris1" parent="World/Combat/InitialDebris" instance=ExtResource("11")]
+position = Vector2(78.3438, 122.013)
+
+[node name="Debris2" parent="World/Combat/InitialDebris" instance=ExtResource("11")]
+position = Vector2(-162.118, 57.618)
+
+[node name="Debris3" parent="World/Combat/InitialDebris" instance=ExtResource("11")]
+position = Vector2(-22.315, -197.745)
+
+[node name="Handles" type="Node2D" parent="World"]
+
+[node name="MajorPositive" parent="World/Handles" instance=ExtResource("4")]
+position = Vector2(240, 0)
+
+[node name="MinorPositive" parent="World/Handles" instance=ExtResource("4")]
+position = Vector2(0, 240)
+
+[node name="MajorNegative" parent="World/Handles" instance=ExtResource("4")]
+position = Vector2(-240, 0)
+
+[node name="MinorNegative" parent="World/Handles" instance=ExtResource("4")]
+position = Vector2(0, -240)
+
+[node name="CombatHUD" parent="." instance=ExtResource("10")]
+
+[node name="HUD" parent="." instance=ExtResource("12")]

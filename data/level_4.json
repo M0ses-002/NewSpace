@@ -1,0 +1,12 @@
+{
+  "level": 4,
+  "title": "第四关：轨道攻防",
+  "objective": "目标：击落敌机，或夺控全部卫星",
+  "entities": {"Satellites": 2, "Enemies": 1, "InitialDebris": 0},
+  "enemy_fire_enabled": true,
+  "satellite_defense_enabled": true,
+  "victory": {"type": "enemy_or_satellites"},
+  "tutorial": [
+	{"image": "res://data/tutorial_radar.svg", "text": "雷达示意：敌机将主动攻击；扫描锁定后可发射导弹。本局被控制的卫星会帮助我们拦截弹。"}, 
+	{"image": "res://data/tutorial_radar.svg", "text": "本关目标为夺取全部卫星或击落敌方"} ]
+}

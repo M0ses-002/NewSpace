@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="320">
+  <rect width="640" height="320" fill="#091827"/>
+  <text x="24" y="34" fill="#ffffff" font-family="sans-serif" font-size="22">轨道转移：A 出球 → 惯性直线 → B 捕获</text>
+  <circle cx="95" cy="235" r="68" fill="#45c9a0" fill-opacity="0.05" stroke="#61dfb7" stroke-width="2" stroke-dasharray="7 6"/>
+  <circle cx="95" cy="235" r="22" fill="#1f6f96" stroke="#9fe3ff" stroke-width="2"/>
+  <text x="95" y="242" fill="#ffffff" font-family="sans-serif" font-size="16" text-anchor="middle">A</text>
+  <text x="95" y="318" fill="#7fa8bb" font-family="sans-serif" font-size="12" text-anchor="middle">A 引力区 400 km</text>
+  <ellipse cx="120" cy="235" rx="105" ry="42" fill="none" stroke="#f4b656" stroke-width="2"/>
+  <circle cx="225" cy="235" r="4" fill="#f4b656"/>
+  <text x="232" y="260" fill="#f4b656" font-family="sans-serif" font-size="12">远心点</text>
+  <text x="18" y="150" fill="#f4b656" font-family="sans-serif" font-size="15">① 提高速度，远心越过 400 km 后出球</text>
+  <path d="M225 235L432 139" stroke="#cfe6f2" stroke-width="2" stroke-dasharray="9 6"/>
+  <path d="M421 135l16 1-8 12z" fill="#cfe6f2"/>
+  <text x="232" y="208" fill="#cfe6f2" font-family="sans-serif" font-size="14">② 引力区外无引力，沿直线惯性飞行</text>
+  <circle cx="505" cy="105" r="80" fill="#45c9a0" fill-opacity="0.05" stroke="#61dfb7" stroke-width="2" stroke-dasharray="7 6"/>
+  <circle cx="505" cy="105" r="48" fill="none" stroke="#61dfb7" stroke-width="2"/>
+  <circle cx="505" cy="105" r="22" fill="#1f6f96" stroke="#9fe3ff" stroke-width="2"/>
+  <text x="505" y="112" fill="#ffffff" font-family="sans-serif" font-size="16" text-anchor="middle">B</text>
+  <path d="M548 98l10 0-5 10z" fill="#61dfb7"/>
+  <text x="372" y="240" fill="#61dfb7" font-family="sans-serif" font-size="15">③ 进入 B 自动捕获并圆化即通关</text>
+</svg>

@@ -1,0 +1,13 @@
+{
+  "level": 6,
+  "title": "第六关：空军来袭",
+  "objective": "目标：击落敌机",
+  "entities": {"Satellites": 0, "Enemies": 1, "InitialDebris": 0},
+  "enemy_fire_enabled": true,
+  "satellite_defense_enabled": false,
+  "victory": {"type": "enemy"},
+  "tutorial": [
+	{"image": "res://data/teach/QQ20261108-003936.png", "text": "空军编队沿行星附近的固定航线飞行。靠近航线将触发编队，请留意空袭警报。"},
+	{"image": "res://data/teach/QQ20261108-003936.png", "text": "本关目标是击落敌机。空军编队不是通关目标；敌机自然坠毁不算击落，任务失败后可重试。"}
+  ]
+}

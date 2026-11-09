@@ -1,0 +1,6 @@
+{
+  "initial_orbit_radius_km": 240.0,
+  "max_acceleration_m_s2": 10.0,
+  "free_flight_max_speed_m_s": 1000.0,
+  "turnaround_cooldown_real_s": 10.0
+}
