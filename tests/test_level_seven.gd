@@ -34,6 +34,7 @@ func run() -> void:
 		var level = new_level()
 		var battle = level.combat
 		check(battle.enemies.size() == 2 and battle.satellites.is_empty(), "两艘敌舰注册，无卫星")
+		check(battle.enemies.size() == 2 and battle.enemies[0].weapon == "missile" and battle.enemies[1].weapon == "carrier", "两艘敌舰分别装备导弹和舰载机")
 		check(level.get_node_or_null("Sandbox/World/AntiAirGuns") == null, "场景无高射炮")
 		var enemy1 = battle.enemies[first].node
 		var enemy2 = battle.enemies[1 - first].node
@@ -55,6 +56,25 @@ func run() -> void:
 	check(crash.completed and paused and crash.start_button.text == "重试关卡", "敌舰坠毁即失败，另一艘被击毁不应通关")
 	paused = false
 	crash.queue_free()
+	await process_frame
+	var reverse_crash = new_level()
+	var destroyed = reverse_crash.combat.enemies[0].node
+	var late_lost = reverse_crash.combat.enemies[1].node
+	reverse_crash.combat.enemies.remove_at(1)
+	reverse_crash.combat.damage_target(destroyed, 10000.0)
+	reverse_crash.combat.enemy_lost.emit(late_lost)
+	await process_frame
+	check(reverse_crash.completed and paused and not reverse_crash.victory_controls.visible, "同帧击毁后坠毁不得通关")
+	paused = false
+	reverse_crash.queue_free()
+	await process_frame
+	var missing = new_level()
+	missing.all_enemy_targets.pop_back()
+	missing.combat.damage_target(missing.combat.enemies[0].node, 10000.0)
+	missing.combat.damage_target(missing.combat.enemies[0].node, 10000.0)
+	await process_frame
+	check(not missing.completed, "敌舰注册不完整时不得通关")
+	missing.queue_free()
 	await process_frame
 	selection = load("res://scenes/level_select.tscn").instantiate()
 	root.add_child(selection)

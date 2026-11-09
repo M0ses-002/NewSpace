@@ -1,0 +1,1 @@
+{"type":"orbital_enemy","data":{"health":100.0,"radius_km":4.0,"acceleration_km_s2":0.02,"max_speed_km_s":0.8,"color":"#ff6666","weapon":"carrier"}}

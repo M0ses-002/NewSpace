@@ -82,6 +82,18 @@ func advance(dt: float, player: Vector2) -> void:
 				_update_member(member, position_world, heading if heading.length_squared() > 0.000001 else Vector2.RIGHT)
 		modulate.a = clampf(position_world.distance_to(player) / maxf(return_distance, float(settings.fade_distance_km)), 0.0, 1.0)
 
+func rewind_orbit_to(time_in_step: float) -> void:
+	elapsed -= orbit_end_time - time_in_step
+	returning = false
+	modulate.a = 1.0
+	var duration: float = TAU * radius / float(settings.orbit_speed_km_s)
+	var angle := start_angle + direction * TAU * elapsed / duration
+	position_world = center + Vector2.from_angle(angle) * radius
+	for member in members:
+		if member.alive:
+			_update_member(member, position_world, -direction * Vector2.from_angle(angle).orthogonal())
+			member.previous = member.current
+
 func finished(player: Vector2) -> bool:
 	if returning and position_world.distance_to(player) <= 0.001:
 		return true

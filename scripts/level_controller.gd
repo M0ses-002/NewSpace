@@ -10,6 +10,8 @@ var page := 0
 var completed := false
 var satellite_count := 0
 var enemy_lost_in_all_enemies := false
+var all_enemy_targets: Array[Node2D] = []
+var destroyed_enemy_targets: Array[Node2D] = []
 var dialog: Control
 var page_label: Label
 var page_image: TextureRect
@@ -41,6 +43,11 @@ func _ready() -> void:
 	if config.is_empty():
 		return
 	satellite_count = combat.satellites.size()
+	if config.victory.type == "all_enemies":
+		for enemy in combat.enemies:
+			all_enemy_targets.append(enemy.node)
+		if all_enemy_targets.size() != int(config.entities.Enemies):
+			push_error("敌舰注册数量与关卡配置不一致，无法完成关卡。")
 	combat.satellite_pressed.connect(_satellite_pressed)
 	combat.enemy_destroyed.connect(_enemy_destroyed)
 	combat.enemy_lost.connect(_enemy_lost)
@@ -206,8 +213,14 @@ func _enemy_destroyed(node: Node2D) -> void:
 		return
 	if config.victory.type in ["enemy", "enemy_or_satellites"]:
 		_win.call_deferred()
-	elif config.victory.type == "all_enemies" and not enemy_lost_in_all_enemies and node.get_parent() == combat.get_node("Enemies") and combat.enemies.is_empty():
-		_win.call_deferred()
+	elif config.victory.type == "all_enemies" and all_enemy_targets.has(node) and not destroyed_enemy_targets.has(node):
+		destroyed_enemy_targets.append(node)
+		if all_enemy_targets.size() > 0 and all_enemy_targets.size() == int(config.entities.Enemies) and destroyed_enemy_targets.size() == all_enemy_targets.size():
+			_win_all_enemies.call_deferred()
+
+func _win_all_enemies() -> void:
+	if not enemy_lost_in_all_enemies and combat.enemies.is_empty():
+		_win()
 
 func _enemy_lost(_node: Node2D) -> void:
 	if not completed and not combat.dead and config.victory.type in ["enemy", "all_enemies"]:

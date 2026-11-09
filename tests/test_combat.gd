@@ -931,5 +931,187 @@ func run() -> void:
 		check(battle._launch_carrier_squadrons() and battle.carrier_squadrons[0].center.is_equal_approx(scene.ship.get_parent().to_global(scene.focus_center())) and absf(battle.carrier_squadrons[0].radius - 200.0) < 0.001, "舰载机围绕第二行星焦点发射")
 		battle._clear_carrier_squadrons()
 		scene.focus_index = saved_focus
+	scene.reset()
+	scene.manually_paused = false
+	battle.enemy_fire_enabled = true
+	var carrier_enemy: Dictionary = battle.enemies[0]
+	carrier_enemy.weapon = "carrier"
+	carrier_enemy.cooldown = 1.0
+	carrier_enemy.carrier_cooldown = 4.0
+	battle.advance_cooldowns(0.1)
+	check(carrier_enemy.node.get_node("Health").text.contains("3.9"), "航母显示自身舰载机冷却而非导弹冷却")
+	carrier_enemy.node.position = scene.ship.position.rotated(0.5)
+	check(battle._launch_enemy_carrier(carrier_enemy.node), "同天体相近高度可发射敌方舰载机")
+	check(battle.carrier_squadrons.size() == 2 and battle.carrier_squadrons[0].team == "enemy" and battle.carrier_squadrons[0].members.size() == 9, "敌方发射两队各九架")
+	var enemy_squad = battle.carrier_squadrons[0]
+	battle._launch_carrier_squadrons()
+	var player_squad = battle.carrier_squadrons[2]
+	battle._start_dogfight(player_squad, enemy_squad)
+	var old_probability: float = battle.config.carrier.dogfight_loss_probability
+	battle.config.carrier.dogfight_loss_probability = 1.0
+	scene.manually_paused = true
+	battle.advance_cooldowns(3.0)
+	check(not battle.dogfights.is_empty() and battle.dogfights[0].elapsed == 0.0, "暂停冻结狗斗现实计时")
+	scene.manually_paused = false
+	battle.advance_cooldowns(2.0)
+	check(battle.dogfights.is_empty() and player_squad.dogfight == null and enemy_squad.dogfight == null, "两现实秒后结束狗斗")
+	for squadron in [player_squad, enemy_squad]:
+		var survivors: int = squadron.members.filter(func(member): return member.alive).size()
+		check(survivors >= 6 and survivors <= 8, "狗斗每方损失一至三架")
+	battle.config.carrier.dogfight_loss_probability = old_probability
+	carrier_enemy.node.position = scene.ship.position * 2.0
+	check(not battle._launch_enemy_carrier(carrier_enemy.node), "轨道高度差过大不能发射")
+	battle._clear_carrier_squadrons()
+	carrier_enemy.node.position = scene.ship.position
+	battle._launch_enemy_carrier(carrier_enemy.node)
+	battle._launch_carrier_squadrons()
+	enemy_squad = battle.carrier_squadrons[0]
+	player_squad = battle.carrier_squadrons[2]
+	battle._clear_squadron(battle.carrier_squadrons[3])
+	battle._clear_squadron(battle.carrier_squadrons[1])
+	var old_range: float = battle.config.carrier.dogfight_range_km
+	battle.config.carrier.dogfight_range_km = 0.01
+	var speed: float = float(battle.config.carrier.orbit_speed_km_s)
+	var duration: float = TAU * enemy_squad.radius / speed
+	enemy_squad.elapsed = duration - 0.1
+	enemy_squad.start_angle = -enemy_squad.direction * TAU * enemy_squad.elapsed / duration
+	player_squad.start_angle = enemy_squad.direction * speed * 1.1 / enemy_squad.radius
+	for squadron in [enemy_squad, player_squad]:
+		squadron.position_world = squadron.center + Vector2.from_angle(0.0 if squadron == enemy_squad else player_squad.start_angle) * squadron.radius
+		for member in squadron.members:
+			member.offset = Vector2.ZERO
+			squadron._update_member(member, squadron.position_world, Vector2.RIGHT)
+			member.previous = member.current
+	# 两段轨迹末点重合，但敌方在 0.1 秒已结束公转，不能与 1 秒时刻比较。
+	battle._advance_carrier_squadrons(1.0, {})
+	check(battle.dogfights.is_empty(), "一方中途结束公转后不能与另一方不同时刻误判相遇")
+	battle._clear_carrier_squadrons()
+	battle._launch_enemy_carrier(carrier_enemy.node)
+	battle._launch_carrier_squadrons()
+	enemy_squad = battle.carrier_squadrons[0]
+	player_squad = battle.carrier_squadrons[3]
+	battle._clear_squadron(battle.carrier_squadrons[2])
+	battle._clear_squadron(battle.carrier_squadrons[1])
+	duration = TAU * enemy_squad.radius / speed
+	enemy_squad.elapsed = duration - 0.1
+	enemy_squad.start_angle = -enemy_squad.direction * TAU * enemy_squad.elapsed / duration
+	player_squad.start_angle = enemy_squad.direction * speed * 0.1 / enemy_squad.radius
+	for squadron in [enemy_squad, player_squad]:
+		squadron.position_world = squadron.center + Vector2.from_angle(0.0 if squadron == enemy_squad else player_squad.start_angle) * squadron.radius
+		for member in squadron.members:
+			member.offset = Vector2.ZERO
+			squadron._update_member(member, squadron.position_world, Vector2.RIGHT)
+			member.previous = member.current
+	battle._advance_carrier_squadrons(1.0, {})
+	check(battle.dogfights.size() == 1, "一队中途结束时共同公转区间内真实相遇触发狗斗")
+	if not battle.dogfights.is_empty():
+		check(not enemy_squad.returning and enemy_squad.elapsed < duration and player_squad.elapsed < 0.1, "相遇时回退两队轨道进度并保留剩余航程")
+		check(battle.dogfights[0].center.distance_to(enemy_squad.position_world) < 0.1 and battle.dogfights[0].center.distance_to(player_squad.position_world) < 0.1, "狗斗中心位于实际相遇位置")
+		var paused_elapsed: float = enemy_squad.elapsed
+		battle.advance_cooldowns(2.0)
+		check(is_equal_approx(enemy_squad.elapsed, paused_elapsed) and not enemy_squad.returning, "狗斗结束后保留相遇时公转进度")
+		battle._advance_carrier_squadrons(0.2, {})
+		check(enemy_squad.returning, "恢复后继续剩余轨道再返航")
+	battle._clear_carrier_squadrons()
+	var old_carrier_radius: float = battle.config.carrier.radius_km
+	var old_enemy_radius: float = carrier_enemy.config.radius_km
+	var old_player_radius: float = battle.config.player.hit_radius_km
+	battle.config.carrier.radius_km = 0.5
+	carrier_enemy.config.radius_km = 0.5
+	battle.config.player.hit_radius_km = 0.5
+	battle.config.carrier.dogfight_range_km = 0.1
+	for reverse_order in [false, true]:
+		for target_after in [false, true]:
+			scene.ship.position = scene.focus_center() + Vector2(200, 0)
+			carrier_enemy.node.position = scene.ship.position
+			carrier_enemy.health = 1000.0
+			battle.player_health = 1000.0
+			battle._launch_enemy_carrier(carrier_enemy.node)
+			battle._launch_carrier_squadrons()
+			enemy_squad = battle.carrier_squadrons[0]
+			player_squad = battle.carrier_squadrons[3]
+			battle._clear_squadron(battle.carrier_squadrons[2])
+			battle._clear_squadron(battle.carrier_squadrons[1])
+			player_squad.start_angle = -0.15
+			for squadron in [enemy_squad, player_squad]:
+				squadron.position_world = squadron.center + Vector2.from_angle(0.0 if squadron == enemy_squad else player_squad.start_angle) * squadron.radius
+				for i in range(squadron.members.size()):
+					var member: Dictionary = squadron.members[i]
+					member.alive = i == 0
+					member.offset = Vector2.ZERO
+					squadron._update_member(member, squadron.position_world, Vector2.RIGHT)
+					member.previous = member.current
+			var target_time := 5.0 if target_after else 1.0
+			var enemy_target: Vector2 = player_squad.center + Vector2.from_angle(player_squad.start_angle + player_squad.direction * speed * target_time / player_squad.radius) * player_squad.radius
+			var player_target: Vector2 = enemy_squad.center + Vector2.from_angle(enemy_squad.start_angle + enemy_squad.direction * speed * target_time / enemy_squad.radius) * enemy_squad.radius
+			carrier_enemy.node.global_position = enemy_target
+			scene.ship.global_position = player_target
+			if reverse_order:
+				battle.carrier_squadrons.reverse()
+			battle._advance_carrier_squadrons(6.0, {})
+			check(battle.dogfights.size() == 1, "伤害时序场景自动相遇")
+			check((carrier_enemy.health < 1000.0) == not target_after and (battle.player_health < 1000.0) == not target_after, "相遇前后双方舰船伤害且与队列顺序无关")
+			battle._clear_carrier_squadrons()
+	# 两个敌队先后相遇：即使较晚的排在前面，也必须选择较早者。
+	scene.ship.position = scene.focus_center() + Vector2(200, 0)
+	carrier_enemy.node.position = scene.ship.position
+	battle._launch_enemy_carrier(carrier_enemy.node)
+	battle._launch_carrier_squadrons()
+	var late_squad = battle.carrier_squadrons[0]
+	var early_squad = battle.carrier_squadrons[1]
+	player_squad = battle.carrier_squadrons[3]
+	battle._clear_squadron(battle.carrier_squadrons[2])
+	for squadron in [late_squad, early_squad, player_squad]:
+		squadron.start_angle = 0.0 if squadron == player_squad else (0.20 if squadron == late_squad else 0.10)
+		squadron.direction = -1.0 if squadron != player_squad else 1.0
+		squadron.position_world = squadron.center + Vector2.from_angle(squadron.start_angle) * squadron.radius
+		for i in range(squadron.members.size()):
+			var member: Dictionary = squadron.members[i]
+			member.alive = i == 0
+			member.offset = Vector2.ZERO
+			squadron._update_member(member, squadron.position_world, Vector2.RIGHT)
+			member.previous = member.current
+	battle._advance_carrier_squadrons(5.0, {})
+	check(player_squad.dogfight != null and early_squad.dogfight == player_squad.dogfight and late_squad.dogfight == null, "多个对手选择最早遭遇而非数组首个")
+	battle._clear_carrier_squadrons()
+	# 敌方母舰被击毁后立即解除狗斗、移除其编队。
+	scene.ship.position = scene.focus_center() + Vector2(200, 0)
+	carrier_enemy.node.position = scene.ship.position
+	carrier_enemy.health = 1.0
+	battle._launch_enemy_carrier(carrier_enemy.node)
+	battle._launch_carrier_squadrons()
+	enemy_squad = battle.carrier_squadrons[0]
+	player_squad = battle.carrier_squadrons[2]
+	battle._start_dogfight(enemy_squad, player_squad)
+	battle._advance_carrier_squadrons(0.01, {})
+	# 另一个玩家编队在起点击中敌母舰。
+	check(not carrier_enemy.node.visible and not battle.carrier_squadrons.has(enemy_squad) and battle.dogfights.is_empty() and player_squad.dogfight == null, "母舰击毁时立即清理敌编队和狗斗")
+	battle._clear_carrier_squadrons()
+	scene.reset()
+	scene.manually_paused = false
+	carrier_enemy = battle.enemies[0]
+	carrier_enemy.node.position = scene.ship.position
+	battle._launch_enemy_carrier(carrier_enemy.node)
+	battle._launch_carrier_squadrons()
+	enemy_squad = battle.carrier_squadrons[0]
+	player_squad = battle.carrier_squadrons[2]
+	battle._start_dogfight(enemy_squad, player_squad)
+	battle.damage_target(carrier_enemy.node, carrier_enemy.health + 1.0)
+	check(not battle.carrier_squadrons.has(enemy_squad) and battle.dogfights.is_empty() and player_squad.dogfight == null, "公共伤害销毁母舰即清理编队和狗斗，无需推进下一子步")
+	battle._clear_carrier_squadrons()
+	scene.reset()
+	scene.manually_paused = false
+	carrier_enemy = battle.enemies[0]
+	carrier_enemy.node.position = scene.ship.position
+	battle._launch_enemy_carrier(carrier_enemy.node)
+	battle._launch_carrier_squadrons()
+	battle.player_health = 1.0
+	carrier_enemy.health = 1000.0
+	battle._advance_carrier_squadrons(0.01, {})
+	check(battle.dead and battle.carrier_squadrons.is_empty() and carrier_enemy.health == 1000.0, "玩家死亡后立即停止后续编队伤害")
+	battle.config.carrier.radius_km = old_carrier_radius
+	carrier_enemy.config.radius_km = old_enemy_radius
+	battle.config.player.hit_radius_km = old_player_radius
+	battle.config.carrier.dogfight_range_km = old_range
 	print("COMBAT_TESTS checks=", checks, " failures=", failures)
 	quit(1 if failures else 0)

@@ -8,6 +8,6 @@
   "victory": {"type": "all_enemies"},
   "tutorial": [
 	{"image": "res://data/tutorial_radar.svg", "text": "本关有两艘敌舰：一艘使用导弹，另一艘使用舰载机。注意雷达和来袭提示，调整飞行路线。"},
-	{"image": "res://data/tutorial_missile.svg", "text": "锁定敌舰并利用武器攻击，同时留意舰载机的威胁。两艘敌舰都必须被击毁才能通关；敌舰自然坠毁不算击毁，任务将失败。"}
+	{"image": "res://data/tutorial_missile.svg", "text": "锁定敌舰并利用武器攻击；双方舰载机相遇时会展开狗斗，先消灭对方舰载机可减轻威胁。两艘敌舰都必须被击毁；敌舰自然坠毁将导致任务失败。"}
   ]
 }
