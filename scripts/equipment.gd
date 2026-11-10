@@ -4,6 +4,9 @@ const Loadout = preload("res://scripts/loadout.gd")
 const CombatConfig = preload("res://scripts/combat_config.gd")
 const Ship = preload("res://ship.glb")
 
+signal start_requested
+var level_mode := false
+
 var slots: Array = []
 var selected_slot := -1
 var weapons: Dictionary = {}
@@ -14,10 +17,24 @@ var weapons: Dictionary = {}
 @onready var pivot: Node3D = $Margin/Layout/Preview/Viewport/World/Pivot
 
 func _ready() -> void:
-	get_tree().paused = false
+	if not level_mode:
+		get_tree().paused = false
+	else:
+		process_mode = Node.PROCESS_MODE_ALWAYS
 	slots = Loadout.get_slots()
 	weapons = CombatConfig.load_config().get("weapons", {})
-	$Margin/Layout/Header/Back.pressed.connect(func() -> void: get_tree().change_scene_to_file("res://scenes/menu.tscn"))
+	if level_mode:
+		$Margin/Layout/Header/Back.text = "开始关卡"
+		$Margin/Layout/Header/Back.pressed.connect(func() -> void: start_requested.emit())
+		var menu := Button.new()
+		menu.text = "返回主菜单"
+		menu.pressed.connect(func() -> void:
+			get_tree().paused = false
+			get_tree().change_scene_to_file("res://scenes/menu.tscn")
+		)
+		$Margin/Layout/Header.add_child(menu)
+	else:
+		$Margin/Layout/Header/Back.pressed.connect(func() -> void: get_tree().change_scene_to_file("res://scenes/menu.tscn"))
 	var model := Ship.instantiate()
 	pivot.add_child(model)
 	var camera: Camera3D = $Margin/Layout/Preview/Viewport/World/Camera

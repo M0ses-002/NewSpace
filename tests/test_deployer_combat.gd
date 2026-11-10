@@ -1,6 +1,7 @@
 extends SceneTree
 
 const Loadout = preload("res://scripts/loadout.gd")
+const HardMode = preload("res://scripts/hard_mode.gd")
 var checks := 0
 var failures := 0
 
@@ -14,12 +15,31 @@ func _initialize() -> void:
 	call_deferred("run")
 
 func run() -> void:
+	check(HardMode.set_enabled(true) and Loadout.save_slots(["wingman", "wingman", "", ""]), "启用困难模式并设置两个僚机作为违规装备")
+	var hard_level = load("res://scenes/level_3.tscn").instantiate()
+	root.add_child(hard_level)
+	hard_level.sandbox.set_physics_process(false)
+	for i in range(hard_level.config.tutorial.size()):
+		hard_level._show_page(i)
+	hard_level._open_equipment()
+	await create_timer(0.1, true).timeout
+	check(paused and not hard_level.hard_started and hard_level.hard_elapsed_usec == 0, "改造期间困难模式计时不启动")
+	hard_level._start_level()
+	check(paused and not hard_level.hard_started and hard_level.equipment_screen.status.text.contains("最多装备"), "违规装备在改造界面阻止开始并提示")
+	hard_level.equipment_screen._select_slot(1)
+	hard_level.equipment_screen._install("")
+	hard_level._start_level()
+	check(not paused and hard_level.hard_started and hard_level.combat.weapon_slots[0].id == "wingman" and hard_level.combat.weapon_slots[1].id == "", "改为一个僚机后开始并载入战斗")
+	hard_level.queue_free()
+	await process_frame
+	check(HardMode.set_enabled(false), "关闭困难模式")
 	check(Loadout.save_slots(["satellite_deployer", "satellite_deployer", "", ""]), "装备两个布置器")
 	var eighth = load("res://scenes/level_8.tscn").instantiate()
 	root.add_child(eighth)
 	eighth.sandbox.set_physics_process(false)
 	for i in range(eighth.config.tutorial.size()):
 		eighth._show_page(i)
+	eighth._open_equipment()
 	eighth._start_level()
 	var deployer: Dictionary = eighth.combat.enemies.filter(func(e): return e.weapon == "satellite_deployer")[0]
 	check(is_equal_approx(float(deployer.get("deployer_cooldown", 0.0)), 15.0), "敌方布置器首次冷却为十五现实秒")
@@ -46,6 +66,22 @@ func run() -> void:
 	level.sandbox.set_physics_process(false)
 	for i in range(level.config.tutorial.size()):
 		level._show_page(i)
+	level._open_equipment()
+	check(paused and is_instance_valid(level.equipment_screen) and not level.dialog.visible, "教程后进入暂停中的关卡装备界面")
+	level.equipment_screen._select_slot(0)
+	level.equipment_screen._install("carrier")
+	level._start_level()
+	check(not paused and not level.dialog.visible and level.combat.weapon_slots[0].id == "carrier", "开始关卡应用修改后的装备且不重播教程")
+	level.queue_free()
+	await process_frame
+	check(Loadout.save_slots(["satellite_deployer", "satellite_deployer", "", ""]), "恢复布置器测试装备")
+	level = load("res://scenes/level_7.tscn").instantiate()
+	root.add_child(level)
+	current_scene = level
+	level.sandbox.set_physics_process(false)
+	for i in range(level.config.tutorial.size()):
+		level._show_page(i)
+	level._open_equipment()
 	level._start_level()
 	var battle = level.combat
 	battle.fire_slot(0)
@@ -198,6 +234,7 @@ func run() -> void:
 	check(is_instance_valid(retried) and retried != level and not retried.combat.player_deployer_used and retried.combat.decoy_satellites.is_empty(), "失败重试重新创建关卡并恢复次数")
 	for i in range(retried.config.tutorial.size()):
 		retried._show_page(i)
+	retried._open_equipment()
 	retried._start_level()
 	retried.combat.fire_slot(1)
 	check(retried.combat.player_deployer_used and retried.combat.decoy_satellites.size() == 1, "重试后的关卡可再次部署")

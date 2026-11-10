@@ -1,9 +1,10 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://scripts/level_controller.gd" id="1"]
 [ext_resource type="PackedScene" path="res://scenes/level_base.tscn" id="2"]
 [ext_resource type="PackedScene" path="res://scenes/enemy.tscn" id="3"]
 [ext_resource type="PackedScene" path="res://scenes/air_force.tscn" id="4"]
+[ext_resource type="PackedScene" path="res://scenes/enemy_carrier_spawn_point.tscn" id="5"]
 
 [node name="Level8" type="Node"]
 script = ExtResource("1")
@@ -22,6 +23,9 @@ config_path = "res://data/enemy_carrier.json"
 [node name="Enemy3" parent="Sandbox/World/Combat/Enemies" instance=ExtResource("3")]
 position = Vector2(220, 50)
 config_path = "res://data/enemy_deployer.json"
+
+[node name="CarrierSpawnPoint" parent="Sandbox/World" instance=ExtResource("5")]
+position = Vector2(0, 220)
 
 [node name="AirForces" type="Node2D" parent="Sandbox/World"]
 

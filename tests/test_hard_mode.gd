@@ -20,6 +20,7 @@ func make_level(number: int) -> Node:
 	level.sandbox.set_physics_process(false)
 	for i in range(level.config.tutorial.size()):
 		level._show_page(i)
+	level._open_equipment()
 	return level
 
 func run() -> void:
@@ -46,10 +47,12 @@ func run() -> void:
 	check(Hard.equipment_error({"max_slots": null, "weapon_limits": {"carrier": 1}}, ["carrier", "carrier", "", ""]) != "", "任意关可配置舰载机上限")
 	check(Hard.equipment_error(Hard.get_rule(7), ["missile", "missile", "", ""]) != "", "第七关双导弹禁止")
 	check(Hard.equipment_error(Hard.get_rule(7), ["carrier", "carrier", "point_defense", ""]) == "", "非导弹装备允许重复")
+	check(Hard.equipment_error(Hard.get_rule(7), ["wingman", "wingman", "wingman", ""]) == "", "第七关允许三个僚机槽")
+	check(Hard.equipment_error(Hard.get_rule(7), ["wingman", "wingman", "wingman", "wingman"]) != "", "僚机槽计入困难模式装备上限")
 	check(Loadout.save_slots(["missile", "carrier", "", ""]), "设置违规装备")
 	var level = make_level(3)
 	level._start_level()
-	check(level.dialog.visible and paused and not level.hard_started and level.page_label.text.contains("最多装备"), "违规装备阻止开始并提示")
+	check(is_instance_valid(level.equipment_screen) and paused and not level.hard_started and level.equipment_screen.status.text.contains("最多装备"), "违规装备阻止开始并提示")
 	paused = false
 	level.queue_free()
 	await process_frame

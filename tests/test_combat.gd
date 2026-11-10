@@ -26,9 +26,57 @@ func _initialize() -> void:
 	root.add_child.call_deferred(scene)
 	run.call_deferred()
 
+func send_shortcut(key: int, pressed := true, echo := false, shift := false) -> void:
+	var event := InputEventKey.new()
+	event.keycode = key
+	event.pressed = pressed
+	event.echo = echo
+	event.shift_pressed = shift
+	root.push_input(event)
+
+func test_weapon_shortcuts(battle: Node) -> void:
+	var saved: Array[Dictionary] = battle.weapon_slots.duplicate(true)
+	for slot in battle.weapon_slots:
+		slot.id = "point_defense"
+		slot.cooldown = 0.0
+		slot.active = false
+	for i in range(4):
+		send_shortcut(KEY_1 + i)
+		check(battle.weapon_slots[i].active, "数字键启动对应装备槽 %d" % (i + 1))
+	for i in range(4):
+		send_shortcut(KEY_1 + i)
+		check(not battle.weapon_slots[i].active and battle.weapon_slots[i].cooldown > 0.0, "数字键停止装备并进入冷却 %d" % (i + 1))
+	send_shortcut(KEY_1)
+	check(not battle.weapon_slots[0].active, "数字键遵守冷却")
+	battle.weapon_slots[0].cooldown = 0.0
+	send_shortcut(KEY_1, false)
+	send_shortcut(KEY_1, true, true)
+	send_shortcut(KEY_1, true, false, true)
+	check(not battle.weapon_slots[0].active, "释放、重复和组合键不触发")
+	scene.manually_paused = true
+	send_shortcut(KEY_1)
+	scene.manually_paused = false
+	paused = true
+	send_shortcut(KEY_1)
+	paused = false
+	scene.dragging = true
+	send_shortcut(KEY_1)
+	scene.dragging = false
+	check(not battle.weapon_slots[0].active, "手动暂停、场景暂停或调轨时不触发")
+	var edit := LineEdit.new()
+	scene.get_node("CombatHUD").add_child(edit)
+	edit.grab_focus()
+	await process_frame
+	send_shortcut(KEY_1)
+	check(not battle.weapon_slots[0].active, "文本输入焦点时不触发")
+	edit.free()
+	battle.weapon_slots.assign(saved)
+	battle._update_hud()
+
 func run() -> void:
 	scene.set_physics_process(false)
 	var battle = scene.combat
+	await test_weapon_shortcuts(battle)
 	var packed: PackedScene = load("res://scenes/main.tscn")
 	var edited_scene: Node = packed.instantiate()
 	edited_scene.get_node("World/Combat/Enemies/Enemy1").position = Vector2(-245, 72)

@@ -3,6 +3,7 @@ extends Node
 const Progress = preload("res://scripts/level_progress.gd")
 const HardMode = preload("res://scripts/hard_mode.gd")
 const Loadout = preload("res://scripts/loadout.gd")
+const Equipment = preload("res://scenes/equipment.tscn")
 @export_file("*.json") var config_path: String
 var config: Dictionary
 var sandbox: Node2D
@@ -20,12 +21,14 @@ var satellite_count := 0
 var enemy_lost_in_all_enemies := false
 var all_enemy_targets: Array[Node2D] = []
 var destroyed_enemy_targets: Array[Node2D] = []
+var required_spawn_points: Array[Node] = []
 var dialog: Control
 var page_label: Label
 var page_image: TextureRect
 var previous_button: Button
 var next_button: Button
 var start_button: Button
+var equipment_screen: Control
 var objective: Label
 var victory_controls: HBoxContainer
 var victory_next: Button
@@ -59,6 +62,12 @@ func _ready() -> void:
 			all_enemy_targets.append(enemy.node)
 		if all_enemy_targets.size() != int(config.entities.Enemies):
 			push_error("敌舰注册数量与关卡配置不一致，无法完成关卡。")
+		for point in get_tree().get_nodes_in_group("enemy_carrier_spawn_point"):
+			if sandbox.is_ancestor_of(point):
+				required_spawn_points.append(point)
+				point.exhausted.connect(_spawn_point_exhausted)
+		if required_spawn_points.size() != int(config.victory.get("required_spawn_points", 0)):
+			push_error("刷新点数量与关卡配置不一致，无法完成关卡。")
 	combat.satellite_pressed.connect(_satellite_pressed)
 	combat.enemy_destroyed.connect(_enemy_destroyed)
 	combat.enemy_lost.connect(_enemy_lost)
@@ -118,8 +127,8 @@ func _create_overlay() -> void:
 	next_button.pressed.connect(func() -> void: _show_page(page + 1))
 	buttons.add_child(next_button)
 	start_button = Button.new()
-	start_button.text = "开始关卡"
-	start_button.pressed.connect(_start_level)
+	start_button.text = "飞船改造"
+	start_button.pressed.connect(_open_equipment)
 	buttons.add_child(start_button)
 	var return_button := Button.new()
 	return_button.text = "返回菜单"
@@ -175,21 +184,34 @@ func _show_page(index: int) -> void:
 	next_button.disabled = page == config.tutorial.size() - 1
 	start_button.disabled = visited.has(false)
 
+func _open_equipment() -> void:
+	if visited.has(false) or is_instance_valid(equipment_screen):
+		return
+	dialog.visible = false
+	equipment_screen = Equipment.instantiate()
+	equipment_screen.level_mode = true
+	equipment_screen.start_requested.connect(_start_level)
+	dialog.get_parent().add_child(equipment_screen)
+
 func _start_level() -> void:
-	if visited.has(false):
+	if visited.has(false) or not is_instance_valid(equipment_screen):
 		return
 	if hard_enabled:
 		if hard_rule.is_empty():
-			page_label.text = "困难模式规则读取失败，请返回菜单。"
+			equipment_screen.status.text = "困难模式规则读取失败，请返回菜单。"
 			return
 		var error := HardMode.equipment_error(hard_rule, Loadout.get_slots())
 		if not error.is_empty():
-			page_label.text = error
+			equipment_screen.status.text = error
 			return
+	combat.reset_battle()
+	if hard_enabled:
 		hard_started = true
 		hard_elapsed_usec = 0
 		hard_clock_usec = Time.get_ticks_usec()
 		hard_clock_running = not sandbox.manually_paused and not sandbox.is_orbit_editing()
+	equipment_screen.queue_free()
+	equipment_screen = null
 	dialog.visible = false
 	get_tree().paused = false
 	var audio := get_node_or_null("/root/AudioManager")
@@ -266,9 +288,20 @@ func _enemy_destroyed(node: Node2D) -> void:
 		if all_enemy_targets.size() > 0 and all_enemy_targets.size() == int(config.entities.Enemies) and destroyed_enemy_targets.size() == all_enemy_targets.size():
 			_win_all_enemies.call_deferred()
 
+func _spawn_point_exhausted() -> void:
+	_win_all_enemies.call_deferred()
+
 func _win_all_enemies() -> void:
-	if not enemy_lost_in_all_enemies and combat.enemies.is_empty():
-		_win()
+	if enemy_lost_in_all_enemies or not combat.enemies.is_empty():
+		return
+	if all_enemy_targets.is_empty() or all_enemy_targets.size() != int(config.entities.Enemies) or destroyed_enemy_targets.size() != all_enemy_targets.size():
+		return
+	if required_spawn_points.size() != int(config.victory.get("required_spawn_points", 0)):
+		return
+	for point in required_spawn_points:
+		if not is_instance_valid(point) or not point.dead:
+			return
+	_win()
 
 func _enemy_lost(_node: Node2D) -> void:
 	if not completed and not combat.dead and config.victory.type in ["enemy", "all_enemies"]:
@@ -288,7 +321,7 @@ func _fail(message: String) -> void:
 	start_button.visible = true
 	start_button.disabled = false
 	start_button.text = "重试关卡"
-	start_button.pressed.disconnect(_start_level)
+	start_button.pressed.disconnect(_open_equipment)
 	start_button.pressed.connect(_retry_level)
 
 func _retry_level() -> void:
