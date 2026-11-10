@@ -15,7 +15,7 @@ func _initialize() -> void:
 	call_deferred("run")
 
 func run() -> void:
-	check(HardMode.set_enabled(true) and Loadout.save_slots(["wingman", "wingman", "", ""]), "启用困难模式并设置两个僚机作为违规装备")
+	check(HardMode.set_enabled(true) and Loadout.save_slots(["carrier", "carrier", "", ""]), "启用困难模式并设置两个舰载机作为违规装备")
 	var hard_level = load("res://scenes/level_3.tscn").instantiate()
 	root.add_child(hard_level)
 	hard_level.sandbox.set_physics_process(false)
@@ -29,7 +29,7 @@ func run() -> void:
 	hard_level.equipment_screen._select_slot(1)
 	hard_level.equipment_screen._install("")
 	hard_level._start_level()
-	check(not paused and hard_level.hard_started and hard_level.combat.weapon_slots[0].id == "wingman" and hard_level.combat.weapon_slots[1].id == "", "改为一个僚机后开始并载入战斗")
+	check(not paused and hard_level.hard_started and hard_level.combat.weapon_slots[0].id == "carrier" and hard_level.combat.weapon_slots[1].id == "", "改为一个舰载机后开始并载入战斗")
 	hard_level.queue_free()
 	await process_frame
 	check(HardMode.set_enabled(false), "关闭困难模式")

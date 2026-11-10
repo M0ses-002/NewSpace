@@ -25,7 +25,8 @@ position = Vector2(220, 50)
 config_path = "res://data/enemy_deployer.json"
 
 [node name="CarrierSpawnPoint" parent="Sandbox/World" instance=ExtResource("5")]
-position = Vector2(0, 220)
+position = Vector2(0, 450)
+dive_periapsis_km = 220.0
 
 [node name="AirForces" type="Node2D" parent="Sandbox/World"]
 

@@ -23,6 +23,20 @@ func run() -> void:
 	var battle = level.combat
 	var point = level.get_node("Sandbox/World/CarrierSpawnPoint")
 	check(battle.carrier_spawn_points.has(point), "发现本关刷新点")
+	var body: Dictionary = level.sandbox.body_at(0)
+	var center: Vector2 = level.sandbox.ship.get_parent().to_global(body.center)
+	var radial: Vector2 = point.global_position - center
+	var speed: Vector2 = point.launch_velocity_world(center, float(body.mu))
+	check(radial.length() > float(body.gravity_radius_km), "刷新点位于引力圈外")
+	check(absf(radial.dot(speed)) < 0.0001 and radial.cross(speed) * point.orbit_direction > 0.0, "远地点切向速度与方向正确")
+	var probe = load("res://scenes/carrier_squadron.tscn").instantiate()
+	root.add_child(probe)
+	probe.launch(point.global_position, center, float(point.orbit_direction), battle.config.carrier, "enemy", point, speed, float(body.mu))
+	var far: Vector2 = probe._orbit_state(0.0).position
+	var near: Vector2 = probe._orbit_state(probe.orbit_duration * 0.5).position
+	check(far.distance_to(center) > float(body.gravity_radius_km), "编队起始位于圈外")
+	check(absf(near.distance_to(center) - point.dive_periapsis_km) < 0.01 and near.distance_to(center) < float(body.gravity_radius_km) and near.distance_to(center) > float(body.radius_km), "编队从圈外进入圈内并避开行星")
+	probe.queue_free()
 	battle.advance_cooldowns(4.9)
 	check(battle.carrier_squadrons.is_empty(), "首组等待五现实秒")
 	level.sandbox.manually_paused = true
@@ -46,7 +60,14 @@ func run() -> void:
 	var first = battle.carrier_squadrons[0]
 	var anchor = first.mothership
 	check(anchor != point and anchor.global_position.is_equal_approx(point.global_position), "固定独立返航锚点")
-	check(first.center.is_equal_approx(level.sandbox.ship.get_parent().to_global(level.sandbox.body_at(0).center)), "第一行星为焦点")
+	check(first.center.is_equal_approx(center), "第一行星为焦点")
+	var actual_far: Vector2 = first._orbit_state(0.0).position
+	var actual_near: Vector2 = first._orbit_state(first.orbit_duration * 0.5).position
+	check(actual_far.distance_to(center) > float(body.gravity_radius_km) and absf(actual_near.distance_to(center) - point.dive_periapsis_km) < 0.01, "实际刷新编队从引力圈外俯冲至圈内")
+	var first_step: Vector2 = first._orbit_state(first.orbit_duration * 0.001).position - actual_far
+	check(first_step.dot(speed) > 0.0, "实际编队运动方向与发射速度一致")
+	first.advance(first.orbit_duration * 0.5, anchor.global_position)
+	check(absf(first.position_world.distance_to(center) - point.dive_periapsis_km) < 0.01, "实际编队推进后进入引力圈")
 	battle.advance_cooldowns(10.0)
 	check(battle.carrier_squadrons.size() == 3 and point.dead and not point.visible, "三组后刷新点耗尽")
 	battle._advance_carrier_squadrons(0.001, {})

@@ -11,6 +11,17 @@ func check(value: bool, label: String) -> void:
 		failures += 1
 		push_error(label)
 
+func legacy_anomaly(mean: float, e: float) -> float:
+	var low := -PI
+	var high := PI
+	for i in range(48):
+		var mid := (low + high) * 0.5
+		if mid - e * sin(mid) < mean:
+			low = mid
+		else:
+			high = mid
+	return (low + high) * 0.5
+
 func _initialize() -> void:
 	call_deferred("run")
 
@@ -45,6 +56,44 @@ func run() -> void:
 	check(fallback.orbit.e == 0.0 and absf(fallback.orbit.a - origin.distance_to(center)) < 0.001, "非闭合轨道退回发射点圆轨道")
 	fallback.advance(1.0, origin)
 	check(absf(fallback.position_world.distance_to(center) - fallback.radius) < 0.001, "回退圆轨半径固定")
+	var max_error := 0.0
+	var max_residual := 0.0
+	for e in [0.0, 0.4, 0.9, 0.99, 0.999998, 0.9999999]:
+		for i in range(-1000, 1001):
+			var mean := PI * float(i) / 1000.0
+			var anomaly: float = fallback._solve_anomaly(mean, e)
+			max_error = maxf(max_error, absf(anomaly - legacy_anomaly(mean, e)))
+			max_residual = maxf(max_residual, absf(anomaly - e * sin(anomaly) - mean))
+		for mean in [-0.000001, -0.0000000001, 0.0, 0.0000000001, 0.000001]:
+			var anomaly: float = fallback._solve_anomaly(mean, e)
+			max_error = maxf(max_error, absf(anomaly - legacy_anomaly(mean, e)))
+			max_residual = maxf(max_residual, absf(anomaly - e * sin(anomaly) - mean))
+	check(max_error < 0.000000001 and max_residual < 0.00000000000002, "开普勒求解匹配原二分与残差，包括高偏心近心点")
+	var original_orbit: Dictionary = fallback.orbit
+	var original_mean: float = fallback.start_mean
+	fallback.orbit = {"a": 400.0, "e": 0.999998, "angle": 0.7}
+	fallback.start_mean = -0.000001
+	var before_periapsis: Dictionary = fallback._orbit_state(0.0)
+	var after_periapsis: Dictionary = fallback._orbit_state(0.000002 * fallback.orbit_duration / TAU)
+	check(before_periapsis.position.is_finite() and after_periapsis.position.is_finite() and before_periapsis.heading.is_finite() and after_periapsis.heading.is_finite(), "高偏心率跨近心点位置和方向有限")
+	fallback.orbit = original_orbit
+	fallback.start_mean = original_mean
+	var bench_inputs: Array[Vector2] = []
+	for e in [0.0, 0.4, 0.9, 0.99, 0.999998]:
+		for i in range(-500, 500):
+			bench_inputs.append(Vector2(PI * float(i) / 500.0, e))
+	var checksum := 0.0
+	var started := Time.get_ticks_usec()
+	for repetition in range(10):
+		for input in bench_inputs:
+			checksum += legacy_anomaly(input.x, input.y)
+	var legacy_us := Time.get_ticks_usec() - started
+	started = Time.get_ticks_usec()
+	for repetition in range(10):
+		for input in bench_inputs:
+			checksum += fallback._solve_anomaly(input.x, input.y)
+	var optimized_us := Time.get_ticks_usec() - started
+	print("CARRIER_SOLVER_BENCH calls=50000 legacy_us=", legacy_us, " optimized_us=", optimized_us, " max_error=", max_error, " max_residual=", max_residual, " checksum=", checksum)
 	var elapsed: float = fallback.elapsed
 	fallback.advance(4.0, origin)
 	fallback.rewind_orbit_to(2.0)

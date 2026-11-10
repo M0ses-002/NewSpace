@@ -66,18 +66,31 @@ func _update_member(member: Dictionary, center_position: Vector2, heading: Vecto
 		node.get_node("Body").global_rotation = heading_actual.angle()
 	member.current = node.global_position
 
+func _solve_anomaly(mean: float, e: float) -> float:
+	var anomaly := mean
+	if e > 0.0:
+		var low := -PI
+		var high := PI
+		for i in range(60):
+			var residual := anomaly - e * sin(anomaly) - mean
+			var derivative := 1.0 - e * cos(anomaly)
+			if residual == 0.0 or (absf(residual) <= 0.00000000000001 and absf(residual / derivative) <= 0.0000000000001):
+				break
+			if residual < 0.0:
+				low = anomaly
+			else:
+				high = anomaly
+			if i < 12:
+				var next := anomaly - residual / derivative
+				anomaly = next if next > low and next < high else (low + high) * 0.5
+			else:
+				anomaly = (low + high) * 0.5
+	return anomaly
+
 func _orbit_state(time: float) -> Dictionary:
 	var e: float = float(orbit.e)
 	var mean := wrapf(start_mean + direction * TAU * time / orbit_duration, -PI, PI)
-	var low := -PI
-	var high := PI
-	for i in range(48):
-		var mid := (low + high) * 0.5
-		if mid - e * sin(mid) < mean:
-			low = mid
-		else:
-			high = mid
-	var anomaly := (low + high) * 0.5
+	var anomaly := _solve_anomaly(mean, e)
 	var minor := sqrt(1.0 - e * e)
 	var local := Vector2(cos(anomaly) - e, minor * sin(anomaly)) * float(orbit.a)
 	var tangent := Vector2(-sin(anomaly), minor * cos(anomaly)).rotated(float(orbit.angle)) * direction

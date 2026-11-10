@@ -2,7 +2,7 @@ extends RefCounted
 
 const SAVE_PATH := "user://equipment.json"
 const DEFAULT_SLOTS := ["missile", "", "", ""]
-const VALID_IDS := ["", "missile", "point_defense", "carrier", "satellite_deployer", "wingman"]
+const VALID_IDS := ["", "missile", "point_defense", "carrier", "satellite_deployer"]
 
 static func get_slots() -> Array:
 	var file := FileAccess.open(SAVE_PATH, FileAccess.READ)
@@ -20,7 +20,7 @@ static func get_slots() -> Array:
 	var result := slots.duplicate()
 	for index in range(result.size()):
 		var item: Variant = result[index]
-		if item is String and item == "laser":
+		if item is String and item in ["laser", "wingman"]:
 			result[index] = ""
 		elif not item is String or item not in VALID_IDS:
 			return DEFAULT_SLOTS.duplicate()

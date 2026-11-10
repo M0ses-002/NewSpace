@@ -6,7 +6,6 @@
   "missile": {"speed_km_s": 2.5, "turn_rad_s": 1.5, "damage": 65.0, "lifetime_s": 180.0, "cooldown_real_s": 5.0, "radius_km": 2.0, "color": "#ffb347"},
   "point_defense": {"range_km": 30.0, "duration_sim_s": 150.0, "cooldown_real_s": 5.0},
   "carrier": {"orbit_speed_km_s": 5.0, "return_speed_km_s": 8.0, "fade_distance_km": 60.0, "spacing_km": 6.0, "radius_km": 2.0, "damage": 12.0, "cooldown_real_s": 5.0, "enemy_height_tolerance_km": 20.0, "dogfight_duration_real_s": 2.0, "dogfight_range_km": 12.0, "dogfight_protection_real_s": 1.0, "dogfight_loss_probability": 0.7, "dogfight_loss_min": 1, "dogfight_loss_max": 3},
-  "wingman": {"orbit_radius_km": 20.0, "radius_km": 2.0, "angular_speed_rad_s": 1.0, "duration_real_s": 5.0, "cooldown_real_s": 15.0},
-  "weapons": {"missile": {"name": "追踪导弹"}, "point_defense": {"name": "近防炮"}, "carrier": {"name": "舰载机"}, "satellite_deployer": {"name": "卫星布置器"}, "wingman": {"name": "僚机"}},
+  "weapons": {"missile": {"name": "追踪导弹"}, "point_defense": {"name": "近防炮"}, "carrier": {"name": "舰载机"}, "satellite_deployer": {"name": "卫星布置器"}},
   "enemy": {"health": 100.0, "radius_km": 4.0, "acceleration_km_s2": 0.02, "max_speed_km_s": 0.8, "color": "#ff6666"}
 }

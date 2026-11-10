@@ -253,7 +253,6 @@ func _physics_process(delta: float) -> void:
 			turnaround_cooldown = maxf(0.0, turnaround_cooldown - delta)
 		if is_instance_valid(combat) and not combat.dead:
 			combat.advance_cooldowns(delta)
-			combat.begin_wingman_frame(delta, delta * simulation_speed + pending_simulation_time)
 		speed_limited = false
 		angle_limited = false
 		var remaining: float = delta * simulation_speed + pending_simulation_time

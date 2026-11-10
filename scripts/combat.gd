@@ -35,8 +35,6 @@ var hud: CanvasLayer
 var selected: Node2D
 var scan_angle := 0.0
 var weapon_slots: Array[Dictionary] = []
-var wingman_real_per_sim: float = 0.0
-var wingman_frame_remaining: float = 0.0
 var player_cooldown: float:
 	get:
 		return float(weapon_slots[0].cooldown) if not weapon_slots.is_empty() else 0.0
@@ -76,7 +74,7 @@ func setup(owner_controller: Node) -> void:
 	weapon_slots.clear()
 	var equipped: Array = Loadout.get_slots()
 	for i in range(4):
-		weapon_slots.append({"id": str(equipped[i]), "cooldown": 0.0, "cooldown_started": false, "active": false, "remaining": 0.0, "target": null, "wingman": null})
+		weapon_slots.append({"id": str(equipped[i]), "cooldown": 0.0, "cooldown_started": false, "active": false, "remaining": 0.0, "target": null})
 		var button: Button = hud.get_node("Weapons/Slot%d/Fire" % (i + 1))
 		var callback := fire_slot.bind(i)
 		if not button.pressed.is_connected(callback):
@@ -157,10 +155,6 @@ func _restart_level() -> void:
 	controller.get_tree().reload_current_scene()
 
 func reset_battle() -> void:
-	for slot in weapon_slots:
-		if slot.id == "wingman" and is_instance_valid(slot.get("wingman")):
-			slot.wingman.queue_free()
-	wingman_frame_remaining = 0.0
 	_clear_carrier_squadrons()
 	for point in carrier_spawn_points:
 		if is_instance_valid(point):
@@ -299,16 +293,6 @@ func advance_cooldowns(real_delta: float) -> void:
 			dogfight_protection.erase(key)
 	_advance_dogfights(real_delta)
 
-func begin_wingman_frame(real_delta: float, simulation_delta: float) -> void:
-	wingman_frame_remaining = maxf(0.0, real_delta)
-	wingman_real_per_sim = real_delta / simulation_delta if simulation_delta > 0.0 else 0.0
-	if simulation_delta <= 0.0:
-		_advance_wingmen(real_delta, controller.ship.global_position, controller.ship.global_position)
-		wingman_frame_remaining = 0.0
-		for slot in weapon_slots:
-			if slot.id == "wingman" and slot.active and float(slot.remaining) <= 0.0:
-				_stop_slot(slot)
-
 func advance(dt: float, old_player: Vector2) -> void:
 	if dead or dt <= 0.0 or controller.manually_paused or controller.is_orbit_editing() or get_tree().paused:
 		return
@@ -327,16 +311,12 @@ func advance(dt: float, old_player: Vector2) -> void:
 	for item in enemies:
 		previous_targets[item.node.get_instance_id()] = item.node.position
 	_update_satellites(dt)
-	var wingman_real_dt: float = minf(wingman_frame_remaining, dt * wingman_real_per_sim)
-	wingman_frame_remaining = maxf(0.0, wingman_frame_remaining - wingman_real_dt)
-	var old_player_world: Vector2 = controller.ship.get_parent().to_global(old_player)
-	var wingman_sweeps: Array[Dictionary] = _advance_wingmen(wingman_real_dt, old_player_world, controller.ship.global_position)
 	var previous_decoys: Dictionary = {}
 	for decoy in decoy_satellites:
 		previous_decoys[decoy.get_instance_id()] = decoy.global_position
 		decoy.advance(dt)
 	var player: Vector2 = controller.ship.position
-	_advance_air_forces(dt, controller.ship.get_parent().to_global(old_player), controller.ship.global_position, wingman_sweeps)
+	_advance_air_forces(dt, controller.ship.get_parent().to_global(old_player), controller.ship.global_position)
 	for satellite in satellites:
 		if satellite.node.has_method("fire_bomb") and satellite.node.descent_state != "ORBIT":
 			continue
@@ -390,7 +370,7 @@ func advance(dt: float, old_player: Vector2) -> void:
 		if enemy_fire_enabled and enemy.get("weapon", "missile") == "satellite_deployer" and enemy.get("deployer_cooldown", 0.0) <= 0.0 and _deploy_decoy(enemy.node, enemy.velocity, 0, "enemy"):
 			enemy.deployer_cooldown = float(decoy_config.enemy_cooldown_real_s)
 		enemy.node.get_node("Health").text = "%d · CD %.1f现实秒" % [ceili(enemy.health), enemy.get("deployer_cooldown", 0.0) if enemy.get("weapon", "missile") == "satellite_deployer" else (enemy.get("carrier_cooldown", 0.0) if enemy.get("weapon", "missile") == "carrier" else enemy.cooldown)]
-	_advance_carrier_squadrons(dt, previous_targets, previous_decoys, wingman_sweeps)
+	_advance_carrier_squadrons(dt, previous_targets, previous_decoys)
 	for satellite in bombardment_satellites:
 		satellite.advance_bombs(dt)
 	capture_initialized = true
@@ -429,24 +409,6 @@ func advance(dt: float, old_player: Vector2) -> void:
 				var defense_missile_end: Vector2 = previous.lerp(missile.node.position, fraction)
 				var defense_player_end: Vector2 = old_player.lerp(player, defense_time / dt)
 				if segment_distance(previous - old_player, defense_missile_end - defense_player_end, Vector2.ZERO) <= float(config.point_defense.range_km):
-					remove_missile(missile)
-					intercepted = true
-					break
-		if intercepted:
-			continue
-		if missile.team == "enemy":
-			for wing in wingman_sweeps:
-				if not wing.slot.active or not is_instance_valid(wing.slot.wingman):
-					continue
-				var overlap: float = minf(float(wing.fraction), active_time / dt)
-				if overlap <= 0.0:
-					continue
-				var shortened: Dictionary = wing.duplicate()
-				shortened.end = wing.start.lerp(wing.end, overlap / float(wing.fraction))
-				var missile_start_world: Vector2 = to_global(previous)
-				var missile_end_world: Vector2 = to_global(previous.lerp(missile.node.position, overlap * dt / active_time))
-				if _wingman_hits(shortened, missile_start_world, missile_end_world, float(config.missile.radius_km)):
-					_stop_slot(wing.slot)
 					remove_missile(missile)
 					intercepted = true
 					break
@@ -493,9 +455,7 @@ func advance(dt: float, old_player: Vector2) -> void:
 	for slot in weapon_slots:
 		if not slot.active:
 			continue
-		if slot.id == "wingman" and float(slot.remaining) <= 0.0:
-			_stop_slot(slot)
-		elif slot.id == "point_defense":
+		if slot.id == "point_defense":
 			slot.remaining = maxf(0.0, float(slot.remaining) - dt)
 			if slot.remaining <= 0.0:
 				_stop_slot(slot)
@@ -503,28 +463,6 @@ func advance(dt: float, old_player: Vector2) -> void:
 	_update_point_defense_visual()
 	_update_hud()
 	_sync_lock_audio()
-
-func _advance_wingmen(real_dt: float, player_start: Vector2, player_end: Vector2) -> Array[Dictionary]:
-	var sweeps: Array[Dictionary] = []
-	for slot in weapon_slots:
-		if slot.id != "wingman" or not slot.active or not is_instance_valid(slot.wingman):
-			continue
-		var active_time: float = minf(real_dt, float(slot.remaining))
-		var fraction: float = active_time / real_dt if real_dt > 0.0 else 1.0
-		var start_angle: float = float(slot.wingman.get_meta("angle"))
-		var end_angle: float = start_angle + float(config.wingman.angular_speed_rad_s) * active_time
-		var radius: float = float(config.wingman.orbit_radius_km)
-		var start: Vector2 = player_start + Vector2.from_angle(start_angle) * radius
-		var end: Vector2 = player_start.lerp(player_end, fraction) + Vector2.from_angle(end_angle) * radius
-		slot.wingman.global_position = end
-		slot.wingman.rotation = end_angle + PI * 0.5
-		slot.wingman.set_meta("angle", end_angle)
-		slot.remaining = maxf(0.0, float(slot.remaining) - active_time)
-		sweeps.append({"start": start, "end": end, "fraction": fraction, "slot": slot})
-	return sweeps
-
-func _wingman_hits(wing: Dictionary, target_start: Vector2, target_end: Vector2, target_radius: float) -> bool:
-	return segment_distance(wing.start - target_start, wing.end - target_end, Vector2.ZERO) <= float(config.wingman.radius_km) + target_radius
 
 func _deploy_decoy(source: Node2D, velocity: Vector2, body_index: int, team: String) -> bool:
 	if body_index < 0 or body_index >= controller.bodies.size():
@@ -580,7 +518,7 @@ func _carrier_defense_time(squadron: Node2D, segments: Array[Dictionary], player
 			hit_time = minf(hit_time, lerpf(t0, end_time, fraction))
 	return hit_time
 
-func _advance_carrier_squadrons(dt: float, previous_targets: Dictionary, previous_decoys: Dictionary = {}, wingman_sweeps: Array[Dictionary] = []) -> void:
+func _advance_carrier_squadrons(dt: float, previous_targets: Dictionary, previous_decoys: Dictionary = {}) -> void:
 	var player: Vector2 = controller.ship.global_position
 	for squadron in carrier_squadrons.duplicate():
 		if squadron.team == "enemy" and (not is_instance_valid(squadron.mothership) or not squadron.mothership.visible):
@@ -681,42 +619,6 @@ func _advance_carrier_squadrons(dt: float, previous_targets: Dictionary, previou
 			squadron.rewind_orbit_to(encounter.time)
 			squadron.orbit_end_time = encounter.time
 		_start_dogfight(a, b, encounter.center)
-	for squadron in carrier_squadrons:
-		if squadron.team != "enemy":
-			continue
-		for member in squadron.members:
-			if not member.alive:
-				continue
-			for wing in wingman_sweeps:
-				var end_fraction: float = float(wing.fraction)
-				var start: Vector2 = member.previous
-				var end: Vector2 = member.current
-				var target_fraction := 1.0
-				for sweep in squadron.orbit_sweeps:
-					if sweep.member == member:
-						start = sweep.start
-						end = sweep.end
-						target_fraction = float(sweep.get("end_time", squadron.orbit_end_time)) / dt
-						end_fraction = minf(end_fraction, target_fraction)
-						break
-				if end_fraction <= 0.0:
-					continue
-				var shortened: Dictionary = wing.duplicate()
-				shortened.end = wing.start.lerp(wing.end, end_fraction / float(wing.fraction))
-				var target_end: Vector2 = start.lerp(end, end_fraction / target_fraction)
-				var hit_fraction: float = squadron._entry_fraction(wing.start - start, shortened.end - target_end, float(config.wingman.radius_km) + float(config.carrier.radius_km))
-				if not is_inf(hit_fraction):
-					var hit_time: float = hit_fraction * end_fraction * dt
-					member.alive = false
-					member.node.visible = false
-					for sweep in squadron.orbit_sweeps:
-						if sweep.member == member:
-							var duration: float = float(sweep.get("end_time", squadron.orbit_end_time))
-							if duration > hit_time:
-								sweep.end = sweep.start.lerp(sweep.end, hit_time / duration)
-								sweep.end_time = hit_time
-							break
-					break
 	for squadron in carrier_squadrons.duplicate():
 		if not carrier_squadrons.has(squadron):
 			continue
@@ -779,7 +681,7 @@ func _on_carrier_spawn_requested(point: Node2D) -> void:
 	var squadron = CarrierSquadron.instantiate()
 	add_child(squadron)
 	squadron.set_meta("spawn_anchor", anchor)
-	squadron.launch(anchor.global_position, center, float(point.orbit_direction), config.carrier, "enemy", anchor, point.velocity_world, float(body.mu))
+	squadron.launch(anchor.global_position, center, float(point.orbit_direction), config.carrier, "enemy", anchor, point.launch_velocity_world(center, float(body.mu)), float(body.mu))
 	carrier_squadrons.append(squadron)
 
 func _launch_enemy_carrier(mothership: Node2D) -> bool:
@@ -856,7 +758,7 @@ func _advance_dogfights(real_delta: float) -> void:
 		dogfight_protection[_dogfight_key(a, b)] = float(config.carrier.dogfight_protection_real_s)
 		dogfights.erase(fight)
 
-func _advance_air_forces(dt: float, old_player: Vector2, player: Vector2, wingman_sweeps: Array[Dictionary] = []) -> void:
+func _advance_air_forces(dt: float, old_player: Vector2, player: Vector2) -> void:
 	for formation in air_forces:
 		if not is_instance_valid(formation) or not formation.valid:
 			continue
@@ -884,18 +786,6 @@ func _advance_air_forces(dt: float, old_player: Vector2, player: Vector2, wingma
 			var start: Vector2 = member.previous
 			var end: Vector2 = member.current
 			var intercepted := false
-			for wing in wingman_sweeps:
-				var overlap: float = minf(float(wing.fraction), active_time / dt)
-				if overlap <= 0.0:
-					continue
-				var shortened: Dictionary = wing.duplicate()
-				shortened.end = wing.start.lerp(wing.end, overlap / float(wing.fraction))
-				if _wingman_hits(shortened, start, start.lerp(end, overlap * dt / active_time), float(formation.config.member_radius_km)):
-					formation.damage_member(i, float(member.health))
-					intercepted = true
-					break
-			if intercepted:
-				continue
 			for slot in weapon_slots:
 				if slot.id != "point_defense" or not slot.active or float(slot.remaining) <= 0.0:
 					continue
@@ -1211,9 +1101,6 @@ func fire_player() -> void:
 			return
 
 func _stop_slot(slot: Dictionary) -> void:
-	if slot.id == "wingman" and is_instance_valid(slot.get("wingman")):
-		slot.wingman.queue_free()
-		slot.wingman = null
 	slot.active = false
 	slot.target = null
 	slot.remaining = 0.0
@@ -1240,17 +1127,6 @@ func fire_slot(index: int) -> void:
 			"satellite_deployer":
 				if not player_deployer_used and _deploy_decoy(controller.ship, controller.velocity, controller.focus_index, "player"):
 					player_deployer_used = true
-			"wingman":
-				var node := Polygon2D.new()
-				node.polygon = PackedVector2Array([Vector2(17, 0), Vector2(-10, -9), Vector2(-5, 0), Vector2(-10, 9)])
-				node.color = Color(0.45, 0.9, 1.0)
-				add_child(node)
-				var angle: float = TAU * float(index) / 4.0
-				node.set_meta("angle", angle)
-				node.global_position = controller.ship.global_position + Vector2.from_angle(angle) * float(config.wingman.orbit_radius_km)
-				slot.wingman = node
-				slot.active = true
-				slot.remaining = float(config.wingman.duration_real_s)
 			"point_defense":
 				slot.active = true
 				slot.remaining = float(config.point_defense.duration_sim_s)
